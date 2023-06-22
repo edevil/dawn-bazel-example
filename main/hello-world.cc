@@ -1,6 +1,7 @@
 #include <ctime>
 #include <string>
 #include <iostream>
+#include <webgpu/webgpu.h>
 
 std::string get_greet(const std::string& who) {
   return "Hello " + who;
@@ -12,6 +13,16 @@ void print_localtime() {
 }
 
 int main(int argc, char** argv) {
+  WGPUInstanceDescriptor desc = {};
+  desc.nextInChain = nullptr;
+
+  WGPUInstance instance = wgpuCreateInstance(&desc);
+
+  if (!instance) {
+    std::cerr << "Could not initialize WebGPU!" << std::endl;
+    return 1;
+  }
+
   std::string who = "world";
   if (argc > 1) {
     who = argv[1];
