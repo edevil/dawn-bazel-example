@@ -1,33 +1,26 @@
-#include <ctime>
-#include <string>
+#include <dawn/dawn_proc.h>
+#include <dawn/native/DawnNative.h>
 #include <iostream>
-#include <webgpu/webgpu.h>
+#include <string>
+#include <webgpu/webgpu_cpp.h>
 
-std::string get_greet(const std::string& who) {
-  return "Hello " + who;
-}
+int main(int argc, char **argv) {
+  DawnProcTable backendProcs = dawn::native::GetProcs();
+  dawnProcSetProcs(&backendProcs);
 
-void print_localtime() {
-  std::time_t result = std::time(nullptr);
-  std::cout << std::asctime(std::localtime(&result));
-}
-
-int main(int argc, char** argv) {
-  WGPUInstanceDescriptor desc = {};
+  wgpu::InstanceDescriptor desc = {};
   desc.nextInChain = nullptr;
 
-  WGPUInstance instance = wgpuCreateInstance(&desc);
-
+  wgpu::Instance instance = wgpu::CreateInstance(&desc);
   if (!instance) {
     std::cerr << "Could not initialize WebGPU!" << std::endl;
     return 1;
   }
 
-  std::string who = "world";
-  if (argc > 1) {
-    who = argv[1];
-  }
-  std::cout << get_greet(who) << std::endl;
-  print_localtime();
+  // wgpu::RequestAdapterOptions adapterOpts = {};
+  // adapterOpts.nextInChain = nullptr;
+  // wgpu::Adapter adapter = instance.RequestAdapter(
+  //     &adapterOpts, RequestAdapterCallback callback, void *userdata);
+
   return 0;
 }
