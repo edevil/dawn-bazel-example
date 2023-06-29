@@ -41,15 +41,15 @@ load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository", "new_git_r
 
 new_git_repository(
     name = "dawn",
-    build_file = "@//bazel/external/dawn:BUILD.bazel",
     branch = "chromium/5793",
+    build_file = "@//bazel/external/dawn:BUILD.bazel",
     remote = "https://dawn.googlesource.com/dawn.git",
 )
 
 git_repository(
     name = "abseil_cpp",
     commit = "cb436cf0142b4cbe47aae94223443df7f82e2920",
-    remote = "https://skia.googlesource.com/external/github.com/abseil/abseil-cpp.git",
+    remote = "https://github.com/abseil/abseil-cpp.git",
 )
 
 new_git_repository(
@@ -82,14 +82,16 @@ git_repository(
 # https://github.com/hedronvision/bazel-compile-commands-extractor
 http_archive(
     name = "hedron_compile_commands",
+    strip_prefix = "bazel-compile-commands-extractor-3dddf205a1f5cde20faf2444c1757abe0564ff4c",
 
     # Replace the commit hash in both places (below) with the latest, rather than using the stale one here.
     # Even better, set up Renovate and let it do the work for you (see "Suggestion: Updates" in the README).
     url = "https://github.com/hedronvision/bazel-compile-commands-extractor/archive/3dddf205a1f5cde20faf2444c1757abe0564ff4c.tar.gz",
-    strip_prefix = "bazel-compile-commands-extractor-3dddf205a1f5cde20faf2444c1757abe0564ff4c",
     # When you first run this tool, it'll recommend a sha256 hash to put here with a message like: "DEBUG: Rule 'hedron_compile_commands' indicated that a canonical reproducible form can be obtained by modifying arguments sha256 = ..."
 )
+
 load("@hedron_compile_commands//:workspace_setup.bzl", "hedron_compile_commands_setup")
+
 hedron_compile_commands_setup()
 
 http_archive(
