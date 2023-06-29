@@ -37,9 +37,9 @@ pip_install(
 # /Python
 #######################################################################################
 
-load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository", "new_git_repository")
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 
-new_git_repository(
+git_repository(
     name = "dawn",
     branch = "chromium/5793",
     build_file = "@//bazel/external/dawn:BUILD.bazel",
@@ -52,30 +52,30 @@ git_repository(
     remote = "https://github.com/abseil/abseil-cpp.git",
 )
 
-new_git_repository(
+git_repository(
     name = "vulkan_tools",
     build_file = "@//vulkan_tools:BUILD.bazel",
     commit = "ca8bb4ee3cc9afdeca4b49c5ef758bad7cce2c72",
-    remote = "https://chromium.googlesource.com/external/github.com/KhronosGroup/Vulkan-Tools",
+    remote = "https://github.com/KhronosGroup/Vulkan-Tools.git",
 )
 
-new_git_repository(
+git_repository(
     name = "vulkan_headers",
     build_file = "@//vulkan_headers:BUILD.bazel",
     commit = "c1a8560c5cf5e7bd6dbc71fe69b1a317411c36b8",
-    remote = "https://chromium.googlesource.com/external/github.com/KhronosGroup/Vulkan-Headers",
+    remote = "https://github.com/KhronosGroup/Vulkan-Headers.git",
 )
 
 git_repository(
     name = "spirv_tools",
     commit = "a63ac9f73d29cd27cdb6e3388d98d1d934e512bb",
-    remote = "https://skia.googlesource.com/external/github.com/KhronosGroup/SPIRV-Tools.git",
+    remote = "https://github.com/KhronosGroup/SPIRV-Tools.git",
 )
 
 git_repository(
     name = "spirv_headers",
     commit = "6e09e44cd88a5297433411b2ee52f4cf9f50fa90",
-    remote = "https://skia.googlesource.com/external/github.com/KhronosGroup/SPIRV-Headers.git",
+    remote = "https://github.com/KhronosGroup/SPIRV-Headers.git",
 )
 
 # Hedron's Compile Commands Extractor for Bazel
