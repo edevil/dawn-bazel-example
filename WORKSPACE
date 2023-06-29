@@ -48,7 +48,7 @@ git_repository(
 
 git_repository(
     name = "abseil_cpp",
-    commit = "cb436cf0142b4cbe47aae94223443df7f82e2920",
+    commit = "66406fdf1553de6ad672576167e7cc7ca2d764cb",
     remote = "https://github.com/abseil/abseil-cpp.git",
 )
 
