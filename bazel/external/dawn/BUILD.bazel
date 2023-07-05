@@ -19,6 +19,9 @@ py_binary(
         "generator/dawn_json_generator.py",
         "generator/generator_lib.py",
     ],
+    imports = [
+        "generator/",
+    ],
     deps = [
         requirement("jinja2"),
         # jinja2 has a dep on MarkupSafe. Declaring MarkupSafe here is not necessary, but it makes
@@ -165,6 +168,9 @@ py_binary(
         "generator/dawn_gpu_info_generator.py",
         "generator/generator_lib.py",
     ],
+    imports = [
+        "generator/",
+    ],
     deps = [
         requirement("jinja2"),
         # jinja2 has a dep on MarkupSafe. Declaring MarkupSafe here is not necessary, but it makes
@@ -197,6 +203,9 @@ py_binary(
     srcs = [
         "generator/dawn_version_generator.py",
         "generator/generator_lib.py",
+    ],
+    imports = [
+        "generator/",
     ],
     deps = [
         requirement("jinja2"),

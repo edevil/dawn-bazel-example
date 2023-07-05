@@ -1,5 +1,18 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
+http_archive(
+    name = "bazel_skylib",
+    sha256 = "c6966ec828da198c5d9adbaa94c05e3a1c7f21bd012a0b29ba8ddbccb2c93b0d",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/bazel-skylib/releases/download/1.1.1/bazel-skylib-1.1.1.tar.gz",
+        "https://github.com/bazelbuild/bazel-skylib/releases/download/1.1.1/bazel-skylib-1.1.1.tar.gz",
+    ],
+)
+
+load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
+
+bazel_skylib_workspace()
+
 #######################################################################################
 # Python
 #######################################################################################
@@ -7,24 +20,21 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 # https://github.com/bazelbuild/rules_python
 http_archive(
     name = "rules_python",
-    sha256 = "5fa3c738d33acca3b97622a13a741129f67ef43f5fdfcec63b29374cc0574c29",
-    strip_prefix = "rules_python-0.9.0",
-    urls = [
-        "https://storage.googleapis.com/skia-world-readable/bazel/5fa3c738d33acca3b97622a13a741129f67ef43f5fdfcec63b29374cc0574c29.tar.gz",
-        "https://github.com/bazelbuild/rules_python/archive/refs/tags/0.9.0.tar.gz",
-    ],
+    sha256 = "84aec9e21cc56fbc7f1335035a71c850d1b9b5cc6ff497306f84cced9a769841",
+    strip_prefix = "rules_python-0.23.1",
+    url = "https://github.com/bazelbuild/rules_python/releases/download/0.23.1/rules_python-0.23.1.tar.gz",
 )
 
 # This sets up a hermetic python3, rather than depending on what is installed.
 load("@rules_python//python:repositories.bzl", "python_register_toolchains")
 
 python_register_toolchains(
-    name = "python3_9",
+    name = "python3_11",
     # https://github.com/bazelbuild/rules_python/blob/main/python/versions.bzl
-    python_version = "3.9",
+    python_version = "3.11",
 )
 
-load("@python3_9//:defs.bzl", "interpreter")
+load("@python3_11//:defs.bzl", "interpreter")
 load("@rules_python//python:pip.bzl", "pip_install")
 
 pip_install(
@@ -32,6 +42,10 @@ pip_install(
     python_interpreter_target = interpreter,
     requirements = "//:requirements.txt",
 )
+
+load("@py_deps//:requirements.bzl", "install_deps")
+
+install_deps()
 
 #######################################################################################
 # /Python
@@ -93,16 +107,3 @@ http_archive(
 load("@hedron_compile_commands//:workspace_setup.bzl", "hedron_compile_commands_setup")
 
 hedron_compile_commands_setup()
-
-http_archive(
-    name = "bazel_skylib",
-    sha256 = "c6966ec828da198c5d9adbaa94c05e3a1c7f21bd012a0b29ba8ddbccb2c93b0d",
-    urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/bazel-skylib/releases/download/1.1.1/bazel-skylib-1.1.1.tar.gz",
-        "https://github.com/bazelbuild/bazel-skylib/releases/download/1.1.1/bazel-skylib-1.1.1.tar.gz",
-    ],
-)
-
-load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
-
-bazel_skylib_workspace()
