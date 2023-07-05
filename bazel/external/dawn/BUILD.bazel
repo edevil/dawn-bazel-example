@@ -529,6 +529,51 @@ DAWN_SRCS = [
     "src/dawn/platform/tracing/TraceEvent.h",
 ]
 
+DAWN_METAL_SRCS = [
+    # From dawn/src/dawn/native/BUILD.gn:sources (dawn_enable_metal)
+    "src/dawn/native/Surface_metal.mm",
+    "src/dawn/native/metal/BackendMTL.h",
+    "src/dawn/native/metal/BackendMTL.mm",
+    "src/dawn/native/metal/BindGroupLayoutMTL.h",
+    "src/dawn/native/metal/BindGroupLayoutMTL.mm",
+    "src/dawn/native/metal/BindGroupMTL.h",
+    "src/dawn/native/metal/BindGroupMTL.mm",
+    "src/dawn/native/metal/BufferMTL.h",
+    "src/dawn/native/metal/BufferMTL.mm",
+    "src/dawn/native/metal/CommandBufferMTL.h",
+    "src/dawn/native/metal/CommandBufferMTL.mm",
+    "src/dawn/native/metal/CommandRecordingContext.h",
+    "src/dawn/native/metal/CommandRecordingContext.mm",
+    "src/dawn/native/metal/ComputePipelineMTL.h",
+    "src/dawn/native/metal/ComputePipelineMTL.mm",
+    "src/dawn/native/metal/DeviceMTL.h",
+    "src/dawn/native/metal/DeviceMTL.mm",
+    "src/dawn/native/metal/Forward.h",
+    "src/dawn/native/metal/PipelineLayoutMTL.h",
+    "src/dawn/native/metal/PipelineLayoutMTL.mm",
+    "src/dawn/native/metal/QuerySetMTL.h",
+    "src/dawn/native/metal/QuerySetMTL.mm",
+    "src/dawn/native/metal/QueueMTL.h",
+    "src/dawn/native/metal/QueueMTL.mm",
+    "src/dawn/native/metal/RenderPipelineMTL.h",
+    "src/dawn/native/metal/RenderPipelineMTL.mm",
+    "src/dawn/native/metal/SamplerMTL.h",
+    "src/dawn/native/metal/SamplerMTL.mm",
+    "src/dawn/native/metal/ShaderModuleMTL.h",
+    "src/dawn/native/metal/ShaderModuleMTL.mm",
+    "src/dawn/native/metal/SwapChainMTL.h",
+    "src/dawn/native/metal/SwapChainMTL.mm",
+    "src/dawn/native/metal/TextureMTL.h",
+    "src/dawn/native/metal/TextureMTL.mm",
+    "src/dawn/native/metal/UtilsMetal.h",
+    "src/dawn/native/metal/UtilsMetal.mm",
+]
+
+DAWN_METAL_DEFINES = [
+    # From dawn/src/dawn/common/BUILD.gn:internal_config
+    "DAWN_ENABLE_BACKEND_METAL",
+]
+
 DAWN_VULKAN_SRCS = [
     # From dawn/src/dawn/native/BUILD.gn:sources (dawn_enable_vulkan)
     "src/dawn/native/SpirvValidation.cpp",
@@ -620,6 +665,27 @@ DAWN_VULKAN_DEFINES = [
     "DAWN_ENABLE_BACKEND_VULKAN",
 ]
 
+objc_library(
+    name = "dawn_native_objc",
+    srcs = DAWN_SRCS + DAWN_METAL_SRCS,
+    hdrs = DAWN_HDRS,
+    defines = DAWN_METAL_DEFINES,
+    includes = [
+        "include",
+        "src",
+    ],
+    target_compatible_with = select({
+        "@platforms//os:osx": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+    visibility = ["//visibility:private"],  # only used by :dawn
+    deps = [
+        # Dawn specifically depends on dawn/src/tint:libtint
+        ":tint",
+        "@abseil_cpp//absl/strings:str_format",
+    ],
+)
+
 cc_library(
     name = "dawn_native",
     srcs = DAWN_SRCS + DAWN_VULKAN_SRCS + DAWN_VULKAN_LINUX_SRCS,
@@ -635,6 +701,10 @@ cc_library(
         "include",
         "src",
     ],
+    target_compatible_with = select({
+        "@platforms//os:linux": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
     visibility = ["//visibility:private"],  # only used by :dawn
     deps = [
         # Dawn specifically depends on dawn/src/tint:libtint
