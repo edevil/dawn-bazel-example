@@ -1393,6 +1393,11 @@ TINT_SRCS = [
     "src/tint/writer/wgsl/generator.h",
     "src/tint/writer/wgsl/generator_impl.cc",
     "src/tint/writer/wgsl/generator_impl.h",
+    # From dawn/src/tint/BUILD.gn:libtint_msl_writer_src
+    "src/tint/writer/msl/generator.cc",
+    "src/tint/writer/msl/generator.h",
+    "src/tint/writer/msl/generator_impl.cc",
+    "src/tint/writer/msl/generator_impl.h",
 ]
 
 cc_library(
@@ -1406,6 +1411,7 @@ cc_library(
         "TINT_BUILD_SPV_WRITER=1",
         "TINT_BUILD_WGSL_READER=1",
         "TINT_BUILD_WGSL_WRITER=1",
+        "TINT_BUILD_MSL_WRITER=1",
     ],
     includes = [
         "include",
