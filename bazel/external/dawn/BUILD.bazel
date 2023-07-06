@@ -567,6 +567,10 @@ DAWN_METAL_SRCS = [
     "src/dawn/native/metal/TextureMTL.mm",
     "src/dawn/native/metal/UtilsMetal.h",
     "src/dawn/native/metal/UtilsMetal.mm",
+    # From dawn/src/dawn/common/BUILD.gn:common is_mac
+    "src/dawn/common/SystemUtils_mac.mm",
+    # From dawn/src/dawn/native/BUILD.gn:native is_mac
+    "src/dawn/native/metal/MetalBackend.mm",
 ]
 
 DAWN_METAL_DEFINES = [
@@ -674,6 +678,12 @@ objc_library(
         "include",
         "src",
     ],
+    sdk_frameworks = [
+        "IOKit",
+        "IOSurface",
+        "Metal",
+        "QuartzCore",
+    ],
     target_compatible_with = select({
         "@platforms//os:osx": [],
         "//conditions:default": ["@platforms//:incompatible"],
@@ -750,12 +760,20 @@ cc_library(
 
 cc_library(
     name = "dawn",
+    target_compatible_with = select({
+        "@platforms//os:osx": [],
+        "@platforms//os:linux": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
     visibility = ["//visibility:public"],
     deps = [
         ":dawn_cpp",
-        ":dawn_native",
         ":dawn_proc",
-    ],
+    ] + select({
+        "@platforms//os:osx": [":dawn_native_objc"],
+        "@platforms//os:linux": [":dawn_native"],
+        "//conditions:default": [],
+    }),
 )
 
 TINT_HDRS = [
