@@ -578,6 +578,128 @@ DAWN_METAL_DEFINES = [
     "DAWN_ENABLE_BACKEND_METAL",
 ]
 
+DAWN_DIRECTX_SRCS = [
+    # From dawn/src/dawn/native/BUILD.gn:native (dawn_enable_d3d11 || dawn_enable_d3d12)
+    "src/dawn/native/d3d/D3DBackend.cpp",
+    # From dawn/src/dawn/native/BUILD.gn:native dawn_enable_d3d12
+    "src/dawn/native/d3d12/D3D12Backend.cpp",
+    # From dawn/src/dawn/native/BUILD.gn:sources (dawn_enable_d3d11 || dawn_enable_d3d12)
+    "src/dawn/native/d3d/BackendD3D.cpp",
+    "src/dawn/native/d3d/BackendD3D.h",
+    "src/dawn/native/d3d/BlobD3D.cpp",
+    "src/dawn/native/d3d/BlobD3D.h",
+    "src/dawn/native/d3d/D3DCompilationRequest.h",
+    "src/dawn/native/d3d/D3DError.cpp",
+    "src/dawn/native/d3d/D3DError.h",
+    "src/dawn/native/d3d/DeviceD3D.cpp",
+    "src/dawn/native/d3d/DeviceD3D.h",
+    "src/dawn/native/d3d/ExternalImageDXGIImpl.cpp",
+    "src/dawn/native/d3d/ExternalImageDXGIImpl.h",
+    "src/dawn/native/d3d/Fence.cpp",
+    "src/dawn/native/d3d/Fence.h",
+    "src/dawn/native/d3d/Forward.h",
+    "src/dawn/native/d3d/PhysicalDeviceD3D.cpp",
+    "src/dawn/native/d3d/PhysicalDeviceD3D.h",
+    "src/dawn/native/d3d/PlatformFunctions.cpp",
+    "src/dawn/native/d3d/PlatformFunctions.h",
+    "src/dawn/native/d3d/ShaderUtils.cpp",
+    "src/dawn/native/d3d/ShaderUtils.h",
+    "src/dawn/native/d3d/SwapChainD3D.cpp",
+    "src/dawn/native/d3d/SwapChainD3D.h",
+    "src/dawn/native/d3d/TextureD3D.cpp",
+    "src/dawn/native/d3d/TextureD3D.h",
+    "src/dawn/native/d3d/UtilsD3D.cpp",
+    "src/dawn/native/d3d/UtilsD3D.h",
+    "src/dawn/native/d3d/d3d_platform.h",
+    # From dawn/src/dawn/native/BUILD.gn:sources dawn_enable_d3d12
+    "src/dawn/native/d3d12/BackendD3D12.cpp",
+    "src/dawn/native/d3d12/BackendD3D12.h",
+    "src/dawn/native/d3d12/BindGroupD3D12.cpp",
+    "src/dawn/native/d3d12/BindGroupD3D12.h",
+    "src/dawn/native/d3d12/BindGroupLayoutD3D12.cpp",
+    "src/dawn/native/d3d12/BindGroupLayoutD3D12.h",
+    "src/dawn/native/d3d12/BufferD3D12.cpp",
+    "src/dawn/native/d3d12/BufferD3D12.h",
+    "src/dawn/native/d3d12/CPUDescriptorHeapAllocationD3D12.cpp",
+    "src/dawn/native/d3d12/CPUDescriptorHeapAllocationD3D12.h",
+    "src/dawn/native/d3d12/CommandAllocatorManager.cpp",
+    "src/dawn/native/d3d12/CommandAllocatorManager.h",
+    "src/dawn/native/d3d12/CommandBufferD3D12.cpp",
+    "src/dawn/native/d3d12/CommandBufferD3D12.h",
+    "src/dawn/native/d3d12/CommandRecordingContext.cpp",
+    "src/dawn/native/d3d12/CommandRecordingContext.h",
+    "src/dawn/native/d3d12/ComputePipelineD3D12.cpp",
+    "src/dawn/native/d3d12/ComputePipelineD3D12.h",
+    "src/dawn/native/d3d12/D3D12Info.cpp",
+    "src/dawn/native/d3d12/D3D12Info.h",
+    "src/dawn/native/d3d12/DeviceD3D12.cpp",
+    "src/dawn/native/d3d12/DeviceD3D12.h",
+    "src/dawn/native/d3d12/FenceD3D12.cpp",
+    "src/dawn/native/d3d12/FenceD3D12.h",
+    "src/dawn/native/d3d12/Forward.h",
+    "src/dawn/native/d3d12/GPUDescriptorHeapAllocationD3D12.cpp",
+    "src/dawn/native/d3d12/GPUDescriptorHeapAllocationD3D12.h",
+    "src/dawn/native/d3d12/HeapAllocatorD3D12.cpp",
+    "src/dawn/native/d3d12/HeapAllocatorD3D12.h",
+    "src/dawn/native/d3d12/HeapD3D12.cpp",
+    "src/dawn/native/d3d12/HeapD3D12.h",
+    "src/dawn/native/d3d12/IntegerTypes.h",
+    "src/dawn/native/d3d12/PageableD3D12.cpp",
+    "src/dawn/native/d3d12/PageableD3D12.h",
+    "src/dawn/native/d3d12/PhysicalDeviceD3D12.cpp",
+    "src/dawn/native/d3d12/PhysicalDeviceD3D12.h",
+    "src/dawn/native/d3d12/PipelineLayoutD3D12.cpp",
+    "src/dawn/native/d3d12/PipelineLayoutD3D12.h",
+    "src/dawn/native/d3d12/PlatformFunctionsD3D12.cpp",
+    "src/dawn/native/d3d12/PlatformFunctionsD3D12.h",
+    "src/dawn/native/d3d12/QuerySetD3D12.cpp",
+    "src/dawn/native/d3d12/QuerySetD3D12.h",
+    "src/dawn/native/d3d12/QueueD3D12.cpp",
+    "src/dawn/native/d3d12/QueueD3D12.h",
+    "src/dawn/native/d3d12/RenderPassBuilderD3D12.cpp",
+    "src/dawn/native/d3d12/RenderPassBuilderD3D12.h",
+    "src/dawn/native/d3d12/RenderPipelineD3D12.cpp",
+    "src/dawn/native/d3d12/RenderPipelineD3D12.h",
+    "src/dawn/native/d3d12/ResidencyManagerD3D12.cpp",
+    "src/dawn/native/d3d12/ResidencyManagerD3D12.h",
+    "src/dawn/native/d3d12/ResourceAllocatorManagerD3D12.cpp",
+    "src/dawn/native/d3d12/ResourceAllocatorManagerD3D12.h",
+    "src/dawn/native/d3d12/ResourceHeapAllocationD3D12.cpp",
+    "src/dawn/native/d3d12/ResourceHeapAllocationD3D12.h",
+    "src/dawn/native/d3d12/SamplerD3D12.cpp",
+    "src/dawn/native/d3d12/SamplerD3D12.h",
+    "src/dawn/native/d3d12/SamplerHeapCacheD3D12.cpp",
+    "src/dawn/native/d3d12/SamplerHeapCacheD3D12.h",
+    "src/dawn/native/d3d12/ShaderModuleD3D12.cpp",
+    "src/dawn/native/d3d12/ShaderModuleD3D12.h",
+    "src/dawn/native/d3d12/ShaderVisibleDescriptorAllocatorD3D12.cpp",
+    "src/dawn/native/d3d12/ShaderVisibleDescriptorAllocatorD3D12.h",
+    "src/dawn/native/d3d12/StagingDescriptorAllocatorD3D12.cpp",
+    "src/dawn/native/d3d12/StagingDescriptorAllocatorD3D12.h",
+    "src/dawn/native/d3d12/StreamImplD3D12.cpp",
+    "src/dawn/native/d3d12/SwapChainD3D12.cpp",
+    "src/dawn/native/d3d12/SwapChainD3D12.h",
+    "src/dawn/native/d3d12/TextureCopySplitter.cpp",
+    "src/dawn/native/d3d12/TextureCopySplitter.h",
+    "src/dawn/native/d3d12/TextureD3D12.cpp",
+    "src/dawn/native/d3d12/TextureD3D12.h",
+    "src/dawn/native/d3d12/UtilsD3D12.cpp",
+    "src/dawn/native/d3d12/UtilsD3D12.h",
+    "src/dawn/native/d3d12/d3d12_platform.h",
+
+    # From dawn/src/dawn/common/BUILD.gn:common is_win
+    "src/dawn/common/WindowsUtils.cpp",
+    "src/dawn/common/WindowsUtils.h",
+    "src/dawn/common/windows_with_undefs.h",
+]
+
+DAWN_DIRECTX_DEFINES = [
+    # From dawn/src/dawn/common/BUILD.gn:internal_config
+    "DAWN_ENABLE_BACKEND_D3D12",
+    "WIN32_LEAN_AND_MEAN",
+    "_WIN32_WINNT=0x0A00",
+]
+
 DAWN_VULKAN_SRCS = [
     # From dawn/src/dawn/native/BUILD.gn:sources (dawn_enable_vulkan)
     "src/dawn/native/SpirvValidation.cpp",
@@ -696,6 +818,33 @@ objc_library(
     ],
 )
 
+# environment variables needed
+# BAZEL_LLVM="C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\tools\llvm\x64"
+# BAZEL_VC="C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC"
+# command line flag(s)
+# --compiler=clang-cl
+cc_library(
+    name = "dawn_native_windows",
+    srcs = DAWN_SRCS + DAWN_DIRECTX_SRCS,
+    hdrs = DAWN_HDRS,
+    defines = DAWN_DIRECTX_DEFINES,
+    includes = [
+        "include",
+        "src",
+    ],
+    linkopts = ["dxguid.lib"],
+    target_compatible_with = select({
+        "@platforms//os:windows": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+    visibility = ["//visibility:private"],  # only used by :dawn
+    deps = [
+        # Dawn specifically depends on dawn/src/tint:libtint
+        ":tint",
+        "@abseil_cpp//absl/strings:str_format",
+    ],
+)
+
 cc_library(
     name = "dawn_native",
     srcs = DAWN_SRCS + DAWN_VULKAN_SRCS + DAWN_VULKAN_LINUX_SRCS,
@@ -763,6 +912,7 @@ cc_library(
     target_compatible_with = select({
         "@platforms//os:osx": [],
         "@platforms//os:linux": [],
+        "@platforms//os:windows": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
     visibility = ["//visibility:public"],
@@ -772,6 +922,7 @@ cc_library(
     ] + select({
         "@platforms//os:osx": [":dawn_native_objc"],
         "@platforms//os:linux": [":dawn_native"],
+        "@platforms//os:windows": [":dawn_native_windows"],
         "//conditions:default": [],
     }),
 )
@@ -1416,6 +1567,11 @@ TINT_SRCS = [
     "src/tint/writer/msl/generator.h",
     "src/tint/writer/msl/generator_impl.cc",
     "src/tint/writer/msl/generator_impl.h",
+    # From dawn/src/tint/BUILD.gn:libtint_hlsl_writer_src
+    "src/tint/writer/hlsl/generator.cc",
+    "src/tint/writer/hlsl/generator.h",
+    "src/tint/writer/hlsl/generator_impl.cc",
+    "src/tint/writer/hlsl/generator_impl.h",
 ]
 
 cc_library(
@@ -1430,6 +1586,7 @@ cc_library(
         "TINT_BUILD_WGSL_READER=1",
         "TINT_BUILD_WGSL_WRITER=1",
         "TINT_BUILD_MSL_WRITER=1",
+        "TINT_BUILD_HLSL_WRITER=1",
     ],
     includes = [
         "include",

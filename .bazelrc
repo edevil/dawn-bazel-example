@@ -1,2 +1,9 @@
-build --cxxopt="-std=c++20" --host_cxxopt="-std=c++20"
+build --cxxopt="/std:c++20" --host_cxxopt="/std:c++20"
 build --per_file_copt=.*\.mm\$@-std=c++20,-fno-objc-arc
+
+# Required to work around Windows clang-cl build defects
+# Ignore conflicting definitions of _WIN32_WINNT
+# Override determinism flags (DATE etc) is valid on clang-cl compiler
+# build:clang-cl --copt="-Wno-macro-redefined"
+# build:clang-cl --copt="-Wno-builtin-macro-redefined"
+# these are not being honored
