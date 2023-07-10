@@ -55,7 +55,7 @@ load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 
 git_repository(
     name = "dawn",
-    build_file = "@//dawn:BUILD.bazel",
+    build_file = "@//:BUILD.dawn",
     #branch = "chromium/5793",
     commit = "fd61f6244fb00ea42390f5a77267a4c195d90a06",
     remote = "https://dawn.googlesource.com/dawn.git",
@@ -69,14 +69,14 @@ git_repository(
 
 git_repository(
     name = "vulkan_tools",
-    build_file = "@//vulkan_tools:BUILD.bazel",
+    build_file = "@//:BUILD.vulkan_tools",
     commit = "ca8bb4ee3cc9afdeca4b49c5ef758bad7cce2c72",
     remote = "https://github.com/KhronosGroup/Vulkan-Tools.git",
 )
 
 git_repository(
     name = "vulkan_headers",
-    build_file = "@//vulkan_headers:BUILD.bazel",
+    build_file = "@//:BUILD.vulkan_headers",
     commit = "c1a8560c5cf5e7bd6dbc71fe69b1a317411c36b8",
     remote = "https://github.com/KhronosGroup/Vulkan-Headers.git",
 )
