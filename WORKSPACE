@@ -55,7 +55,7 @@ load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 
 git_repository(
     name = "dawn",
-    build_file = "@//bazel/external/dawn:BUILD.bazel",
+    build_file = "@//dawn:BUILD.bazel",
     #branch = "chromium/5793",
     commit = "fd61f6244fb00ea42390f5a77267a4c195d90a06",
     remote = "https://dawn.googlesource.com/dawn.git",
