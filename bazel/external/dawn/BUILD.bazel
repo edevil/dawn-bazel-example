@@ -1,18 +1,6 @@
 load("@rules_python//python:defs.bzl", "py_binary")
 load("@py_deps//:requirements.bzl", "requirement")
 
-# This file will be copied into //third_party/externals/dawn via the new_local_repository
-# rule in WORKSPACE.bazel, so all files should be relative to that path.
-
-# We define this here because the emscripten toolchain calls the cpu wasm, whereas the
-# bazelbuild/platforms call it wasm32. https://github.com/emscripten-core/emsdk/issues/919
-config_setting(
-    name = "cpu_wasm",
-    values = {
-        "cpu": "wasm",
-    },
-)
-
 py_binary(
     name = "dawn_json_generator",
     srcs = [
@@ -573,11 +561,6 @@ DAWN_METAL_SRCS = [
     "src/dawn/native/metal/MetalBackend.mm",
 ]
 
-DAWN_METAL_DEFINES = [
-    # From dawn/src/dawn/common/BUILD.gn:internal_config
-    "DAWN_ENABLE_BACKEND_METAL",
-]
-
 DAWN_DIRECTX_SRCS = [
     # From dawn/src/dawn/native/BUILD.gn:native (dawn_enable_d3d11 || dawn_enable_d3d12)
     "src/dawn/native/d3d/D3DBackend.cpp",
@@ -693,13 +676,6 @@ DAWN_DIRECTX_SRCS = [
     "src/dawn/common/windows_with_undefs.h",
 ]
 
-DAWN_DIRECTX_DEFINES = [
-    # From dawn/src/dawn/common/BUILD.gn:internal_config
-    "DAWN_ENABLE_BACKEND_D3D12",
-    "WIN32_LEAN_AND_MEAN",
-    "_WIN32_WINNT=0x0A00",
-]
-
 DAWN_VULKAN_SRCS = [
     # From dawn/src/dawn/native/BUILD.gn:sources (dawn_enable_vulkan)
     "src/dawn/native/SpirvValidation.cpp",
@@ -786,16 +762,18 @@ DAWN_VULKAN_LINUX_SRCS = [
     "src/dawn/native/vulkan/external_memory/MemoryServiceImplementationOpaqueFD.h",
 ]
 
-DAWN_VULKAN_DEFINES = [
-    # From dawn/src/dawn/common/BUILD.gn:internal_config
-    "DAWN_ENABLE_BACKEND_VULKAN",
-]
-
 objc_library(
-    name = "dawn_native_objc",
+    name = "dawn_native_macos",
     srcs = DAWN_SRCS + DAWN_METAL_SRCS,
     hdrs = DAWN_HDRS,
-    defines = DAWN_METAL_DEFINES,
+    copts = [
+        "-std=c++20",
+        "-fno-objc-arc",
+    ],
+    defines = [
+        # From dawn/src/dawn/common/BUILD.gn:internal_config
+        "DAWN_ENABLE_BACKEND_METAL",
+    ],
     includes = [
         "include",
         "src",
@@ -827,7 +805,17 @@ cc_library(
     name = "dawn_native_windows",
     srcs = DAWN_SRCS + DAWN_DIRECTX_SRCS,
     hdrs = DAWN_HDRS,
-    defines = DAWN_DIRECTX_DEFINES,
+    copts = [
+        # Ignore conflicting definitions of _WIN32_WINNT
+        "-Wno-macro-redefined",
+        "-Wno-builtin-macro-redefined",
+    ],
+    defines = [
+        # From dawn/src/dawn/common/BUILD.gn:internal_config
+        "DAWN_ENABLE_BACKEND_D3D12",
+        "WIN32_LEAN_AND_MEAN",
+        "_WIN32_WINNT=0x0A00",
+    ],
     includes = [
         "include",
         "src",
@@ -846,7 +834,7 @@ cc_library(
 )
 
 cc_library(
-    name = "dawn_native",
+    name = "dawn_native_linux",
     srcs = DAWN_SRCS + DAWN_VULKAN_SRCS + DAWN_VULKAN_LINUX_SRCS,
     hdrs = DAWN_HDRS,
     copts = [
@@ -855,7 +843,10 @@ cc_library(
         # interfere/override those.
         "-Iexternal/vulkan_headers/include",
     ],
-    defines = DAWN_VULKAN_DEFINES,
+    defines = [
+        # From dawn/src/dawn/common/BUILD.gn:internal_config
+        "DAWN_ENABLE_BACKEND_VULKAN",
+    ],
     includes = [
         "include",
         "src",
@@ -920,8 +911,8 @@ cc_library(
         ":dawn_cpp",
         ":dawn_proc",
     ] + select({
-        "@platforms//os:osx": [":dawn_native_objc"],
-        "@platforms//os:linux": [":dawn_native"],
+        "@platforms//os:osx": [":dawn_native_macos"],
+        "@platforms//os:linux": [":dawn_native_linux"],
         "@platforms//os:windows": [":dawn_native_windows"],
         "//conditions:default": [],
     }),
@@ -1579,8 +1570,7 @@ cc_library(
     srcs = TINT_SRCS,
     hdrs = TINT_HDRS,
     defines = [
-        # From dawn/src/tint/BUILD.gn:tint_public_config, using the options
-        # set by Skia in //build_overrides/tint.gni
+        # From dawn/src/tint/BUILD.gn:tint_public_config
         "TINT_BUILD_SPV_READER=1",
         "TINT_BUILD_SPV_WRITER=1",
         "TINT_BUILD_WGSL_READER=1",
