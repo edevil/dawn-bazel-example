@@ -796,20 +796,10 @@ objc_library(
     ],
 )
 
-# environment variables needed
-# BAZEL_LLVM="C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\tools\llvm\x64"
-# BAZEL_VC="C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC"
-# command line flag(s)
-# --compiler=clang-cl
 cc_library(
     name = "dawn_native_windows",
     srcs = DAWN_SRCS + DAWN_DIRECTX_SRCS,
     hdrs = DAWN_HDRS,
-    copts = [
-        # Ignore conflicting definitions of _WIN32_WINNT
-        "-Wno-macro-redefined",
-        "-Wno-builtin-macro-redefined",
-    ],
     defines = [
         # From dawn/src/dawn/common/BUILD.gn:internal_config
         "DAWN_ENABLE_BACKEND_D3D12",
