@@ -8,7 +8,7 @@ Bazel is required, of course. [Bazelisk](https://github.com/bazelbuild/bazelisk)
 
 ### Unix (Linux/MacOS)
 
-    bazel build --config=unix //main:hello-world
+    bazel build //main:hello-world
 
 ### Windows
 
@@ -19,4 +19,4 @@ Signal to Bazel the correct path for the VC Tools/LLVM/Clang distribution:
 
 Start build:
 
-    bazel build --config=windows //main:hello-world
+    bazel build //main:hello-world

@@ -1,3 +1,9 @@
+common --enable_platform_specific_config
+
+# Speed up sandboxed compilation, particularly on I/O-constrained and non-Linux systems
+# https://bazel.build/reference/command-line-reference#flag--reuse_sandbox_directories
+build --reuse_sandbox_directories
+
 build:windows --cxxopt="/std:c++20" --host_cxxopt="/std:c++20"
 build:windows --compiler=clang-cl
 # Ignore conflicting definitions of _WIN32_WINNT
@@ -5,3 +11,6 @@ build:windows --cxxopt="-Wno-macro-redefined"
 build:windows --cxxopt="-Wno-builtin-macro-redefined"
 
 build:unix --cxxopt="-std=c++20" --host_cxxopt="-std=c++20"
+
+build:linux --config=unix
+build:macos --config=unix
