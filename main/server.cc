@@ -52,7 +52,7 @@ int createUNIXSocketServer(const char* filename) {
   return fd;
 }
 
-const char* sockfile = "/tmp/server.sock";
+const char* sockfile = SERVER_SOCK;
 static GLFWwindow* window = nullptr;
 static std::unique_ptr<dawn_native::Instance> instance;
 

@@ -29,6 +29,8 @@
   }))
 #endif
 
+#define SERVER_SOCK "/tmp/server.sock"
+
 const char* tmptimestamp();
 bool FDSetNonBlock(int fd);
 int createUNIXSocket(const char* filename, sockaddr_un* addr);

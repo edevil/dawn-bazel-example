@@ -65,6 +65,51 @@ static void printDeviceError(WGPUErrorType errorType, const char* message, void*
   std::cerr << "device error: " << errorTypeName << " error: " << message << std::endl;
 }
 
+wgpu::Adapter requestAdapter(wgpu::Instance instance, wgpu::RequestAdapterOptions const* options) {
+  // A simple structure holding the local information shared with the
+  // onAdapterRequestEnded callback.
+  struct UserData {
+    wgpu::Adapter adapter = nullptr;
+    bool requestEnded = false;
+  };
+  UserData userData;
+
+  // Callback called by wgpuInstanceRequestAdapter when the request returns
+  // This is a C++ lambda function, but could be any function defined in the
+  // global scope. It must be non-capturing (the brackets [] are empty) so
+  // that it behaves like a regular C function pointer, which is what
+  // wgpuInstanceRequestAdapter expects (WebGPU being a C API). The workaround
+  // is to convey what we want to capture through the pUserData pointer,
+  // provided as the last argument of wgpuInstanceRequestAdapter and received
+  // by the callback as its last argument.
+  wgpu::RequestAdapterCallback onAdapterRequestEnded = [](WGPURequestAdapterStatus status,
+                                                          WGPUAdapter adapter, char const* message,
+                                                          void* pUserData) {
+    UserData& userData = *reinterpret_cast<UserData*>(pUserData);
+    if ((wgpu::RequestAdapterStatus)status == wgpu::RequestAdapterStatus::Success) {
+      userData.adapter = (wgpu::Adapter)adapter;
+    } else {
+      std::cout << "Could not get WebGPU adapter: " << message << std::endl;
+    }
+    userData.requestEnded = true;
+  };
+
+  // Call to the WebGPU request adapter procedure
+  instance.RequestAdapter(options, onAdapterRequestEnded, (void*)&userData);
+
+  // In theory we should wait until onAdapterReady has been called, which
+  // could take some time (what the 'await' keyword does in the JavaScript
+  // code). In practice, we know that when the wgpuInstanceRequestAdapter()
+  // function returns its callback has been called.
+  //
+  // TODO: Actually, now that we're using dawn wire this is not guaranteed and
+  // is failing. Also need to InjectInstance from the server side with the correct
+  // (id, generation)
+  assert(userData.requestEnded);
+
+  return userData.adapter;
+}
+
 struct Connection {
   DawnRemoteProtocol proto;
 
@@ -87,16 +132,26 @@ struct Connection {
   }
 
   void initDawnWire() {
+    DawnProcTable procs = dawn_wire::client::GetProcs();
+    // procs.deviceSetUncapturedErrorCallback(device.Get(), printDeviceError, nullptr);
+    dawnProcSetProcs(&procs);
+
     dawn_wire::WireClientDescriptor clientDesc = {};
+    // serializer is configured here, optional memory transfer service
+    // is not configured at this time
     clientDesc.serializer = &proto;
     wireClient = new dawn_wire::WireClient(clientDesc); // global var
 
+    auto instanceReservation = wireClient->ReserveInstance();
+    auto instance = wgpu::Instance::Acquire(instanceReservation.instance);
+
+    wgpu::RequestAdapterOptions adapterOpts = {};
+    adapterOpts.nextInChain = nullptr;
+    auto adapter = requestAdapter(instance, &adapterOpts);
+
     deviceReservation = wireClient->ReserveDevice();
     device = wgpu::Device::Acquire(deviceReservation.device); // global var
-
-    DawnProcTable procs = dawn_wire::client::GetProcs();
-    procs.deviceSetUncapturedErrorCallback(device.Get(), printDeviceError, nullptr);
-    dawnProcSetProcs(&procs);
+    // device.SetUncapturedErrorCallback(printDeviceError, nullptr);
   }
 
   void initDawnPipeline() {
@@ -123,6 +178,7 @@ struct Connection {
     pipeline = device.CreateRenderPipeline(&desc); // global var
   }
 
+  // invoked before starting event loop
   void start(RunLoop* rl, int fd) {
     initDawnWire();
     initDawnPipeline();
@@ -132,6 +188,7 @@ struct Connection {
   uint32_t fc = 0;
   bool animate = true;
 
+  // runs in response to onFrame callback
   void render_frame() {
     fc++;
 
@@ -171,6 +228,9 @@ struct Connection {
   }
 };
 
+// called by main function. Sets up Connection object, proto callbacks
+// and event loop, runs event loop until exit
+// 3 callbacks are used: onFrame, onDawnBuffer and onFramebufferInfo
 void runloop_main(int fd) {
   RunLoop* rl = EV_DEFAULT;
   FDSetNonBlock(fd);
@@ -221,7 +281,7 @@ void runloop_main(int fd) {
 
 int main(int argc, const char* argv[]) {
   bool first_retry = true;
-  const char* sockfile = "/tmp/server.sock";
+  const char* sockfile = SERVER_SOCK;
   while (1) {
     if (first_retry) {
       dlog("connecting to UNIX socket \"%s\" ...", sockfile);
