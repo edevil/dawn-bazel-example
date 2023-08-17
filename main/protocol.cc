@@ -2,48 +2,57 @@
 #include "debug.hh"
 
 #include <cstdio>
+#include <ctype.h> // isprint
 #include <errno.h>
-#include <unistd.h> // pipe
+#include <fcntl.h> // F_GETFL, O_NONBLOCK etc
 #include <sys/socket.h>
 #include <sys/un.h>
-#include <fcntl.h> // F_GETFL, O_NONBLOCK etc
-#include <ctype.h> // isprint
-
+#include <unistd.h> // pipe
 
 #define DLOG_PREFIX "[proto] "
 
 #if defined(DEBUG)
-  #define dlog(format, ...) ({ \
-    fprintf(stderr, DLOG_PREFIX format " \e[2m(%s %d)\e[0m\n", \
-      ##__VA_ARGS__, __FUNCTION__, __LINE__); \
-    fflush(stderr); \
+#define dlog(format, ...)                                                                          \
+  ({                                                                                               \
+    fprintf(stderr, DLOG_PREFIX format " \e[2m(%s %d)\e[0m\n", ##__VA_ARGS__, __FUNCTION__,        \
+            __LINE__);                                                                             \
+    fflush(stderr);                                                                                \
   })
-  #define errlog(format, ...) \
-    (({ fprintf(stderr, "E " format " (%s:%d)\n", ##__VA_ARGS__, __FILE__, __LINE__); \
-        fflush(stderr); }))
+#define errlog(format, ...)                                                                        \
+  (({                                                                                              \
+    fprintf(stderr, "E " format " (%s:%d)\n", ##__VA_ARGS__, __FILE__, __LINE__);                  \
+    fflush(stderr);                                                                                \
+  }))
 #else
-  #define dlog(...) do{}while(0)
-  #define errlog(format, ...) \
-(({ fprintf(stderr, "E " format "\n", ##__VA_ARGS__); fflush(stderr); }))
+#define dlog(...)                                                                                  \
+  do {                                                                                             \
+  } while (0)
+#define errlog(format, ...)                                                                        \
+  (({                                                                                              \
+    fprintf(stderr, "E " format "\n", ##__VA_ARGS__);                                              \
+    fflush(stderr);                                                                                \
+  }))
 #endif
 
 #if defined(DEBUG_TRACE_PROTOCOL)
-  #define trace(format, ...) ({ \
-    fprintf(stderr, "\e[1;34m[proto trace]\e[0m " format " \e[2m(%s %d)\e[0m\n", \
-      ##__VA_ARGS__, __FUNCTION__, __LINE__); \
-    fflush(stderr); \
+#define trace(format, ...)                                                                         \
+  ({                                                                                               \
+    fprintf(stderr, "\e[1;34m[proto trace]\e[0m " format " \e[2m(%s %d)\e[0m\n", ##__VA_ARGS__,    \
+            __FUNCTION__, __LINE__);                                                               \
+    fflush(stderr);                                                                                \
   })
 #else
-  #define trace(...) do{}while(0)
+#define trace(...)                                                                                 \
+  do {                                                                                             \
+  } while (0)
 #endif
 
-
-#define MAX(a,b) \
-  ({__typeof__ (a) _a = (a); __typeof__ (b) _b = (b); _a > _b ? _a : _b; })
-
-#define MIN(a,b) \
-  ({__typeof__ (a) _a = (a); __typeof__ (b) _b = (b); _a < _b ? _a : _b; })
-
+#define MAX(a, b)                                                                                  \
+  ({                                                                                               \
+    __typeof__(a) _a = (a);                                                                        \
+    __typeof__(b) _b = (b);                                                                        \
+    _a > _b ? _a : _b;                                                                             \
+  })
 
 // protocol messages
 //
@@ -54,16 +63,15 @@
 // dawncmdMsg     = "D" size
 // size           = <uint32 in big-endian order>
 //
-#define MSGT_FB_INFO       'I' /* Framebuffer info */
-#define MSGT_FRAME_SIGNAL  'F' /* Frame signal */
-#define MSGT_RESERVATION   'R' /* Device and Swapchain reservations */
-#define MSGT_DAWNCMD       'D' /* Dawn command buffer */
+#define MSGT_FB_INFO 'I'      /* Framebuffer info */
+#define MSGT_FRAME_SIGNAL 'F' /* Frame signal */
+#define MSGT_RESERVATION 'R'  /* Device and Swapchain reservations */
+#define MSGT_DAWNCMD 'D'      /* Dawn command buffer */
 
 // FB_INFO_SIZE is the number of bytes occupied by encoded framebuffer info
 #define FB_INFO_SIZE sizeof(DawnRemoteProtocol::FramebufferInfo)
 
 #define RESERVATION_SIZE (sizeof(dawn_wire::ReservedDevice) + sizeof(dawn_wire::ReservedSwapChain))
-
 
 // encodeDawnCmdHeader writes a MSGT_DAWNCMD header of DAWNCMD_MSG_HEADER_SIZE bytes to dst.
 static void encodeDawnCmdHeader(char* dst, uint32_t dawncmdlen) {
@@ -96,8 +104,6 @@ static void decodeReservation(const char* src, dawn_wire::ReservedSwapChain* scr
   *scr = *((dawn_wire::ReservedSwapChain*)&src[1]); // FIXME
 }
 
-
-
 bool DawnRemoteProtocol::sendFrameSignal() {
   if (_wbuf.avail() < 1) {
     trace("not enough buffer space in _wbuf");
@@ -110,7 +116,7 @@ bool DawnRemoteProtocol::sendFrameSignal() {
 }
 
 bool DawnRemoteProtocol::sendFramebufferInfo(const FramebufferInfo& info) {
-  char tmp[FB_INFO_SIZE+1];
+  char tmp[FB_INFO_SIZE + 1];
   if (_wbuf.avail() < sizeof(tmp)) {
     trace("not enough buffer space in _wbuf");
     return false;
@@ -122,7 +128,7 @@ bool DawnRemoteProtocol::sendFramebufferInfo(const FramebufferInfo& info) {
 }
 
 bool DawnRemoteProtocol::sendReservation(const dawn_wire::ReservedSwapChain& scr) {
-  char tmp[RESERVATION_SIZE+1];
+  char tmp[RESERVATION_SIZE + 1];
   if (_wbuf.avail() < sizeof(tmp)) {
     trace("not enough buffer space in _wbuf");
     return false;
@@ -132,8 +138,6 @@ bool DawnRemoteProtocol::sendReservation(const dawn_wire::ReservedSwapChain& scr
   setNeedsWriteFlush();
   return true;
 }
-
-
 
 bool DawnRemoteProtocol::maybeReadIncomingDawnCmd() {
   assert(_dawnCmdRLen > 0);
@@ -211,7 +215,7 @@ bool DawnRemoteProtocol::readMsg() {
       return false;
     }
     } // switch
-  } // while
+  }   // while
 
   return true;
 }
@@ -298,10 +302,10 @@ void DawnRemoteProtocol::start(RunLoop* rl, int fd) {
   trace("START");
   _rbuf.clear();
   _wbuf.clear();
-  #ifdef DEBUG
+#ifdef DEBUG
   _rbuf._debugname = "rbuf";
   _wbuf._debugname = "wbuf";
-  #endif
+#endif
 
   _rl = rl;
   _io.data = (void*)this;
@@ -348,15 +352,15 @@ bool DawnRemoteProtocol::Flush() {
     // write header (preallocated at writebuf[0..DAWNCMD_MSG_HEADER_SIZE])
     encodeDawnCmdHeader(_dawnout.writebuf, _dawnout.writelen - DAWNCMD_MSG_HEADER_SIZE);
 
-    #ifdef DEBUG_TRACE_PROTOCOL
+#ifdef DEBUG_TRACE_PROTOCOL
     { // log buffer
-      char* buf = (char*)malloc(_dawnout.writelen*5);
-      ssize_t n = debugFmtBytes(buf, _dawnout.writelen*5, _dawnout.writebuf, _dawnout.writelen);
+      char* buf = (char*)malloc(_dawnout.writelen * 5);
+      ssize_t n = debugFmtBytes(buf, _dawnout.writelen * 5, _dawnout.writebuf, _dawnout.writelen);
       if (n != -1)
         trace("data to be sent out: %u\n\"%s\"", _dawnout.writelen, buf);
       free(buf);
     }
-    #endif /* DEBUG_TRACE_PROTOCOL */
+#endif /* DEBUG_TRACE_PROTOCOL */
 
     // swap buffers
     char* buf1 = _dawnout.flushbuf;

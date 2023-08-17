@@ -1,25 +1,25 @@
 #pragma once
-#include <limits>
 #include <algorithm>
 #include <cstring>
-#include <vector>
+#include <limits>
 #include <unistd.h> // read, write, close
-
+#include <vector>
 
 // DEBUG_TRACE_PIPE: define to enable verbose tracing of input and output data
 // #define DEBUG_TRACE_PIPE
 
 #ifdef DEBUG_TRACE_PIPE
-  void _PipeTrace(const char* name, const char* msg, const char* data, size_t datalen);
-  #ifdef DEBUG
-    #define PipeTrace(msg, data, datalen) _PipeTrace(_debugname, msg, data, datalen)
-  #else
-    #define PipeTrace(msg, data, datalen) _PipeTrace("iobuf", msg, data, datalen)
-  #endif
+void _PipeTrace(const char* name, const char* msg, const char* data, size_t datalen);
+#ifdef DEBUG
+#define PipeTrace(msg, data, datalen) _PipeTrace(_debugname, msg, data, datalen)
 #else
-#define PipeTrace(...) do{}while(0)
+#define PipeTrace(msg, data, datalen) _PipeTrace("iobuf", msg, data, datalen)
 #endif
-
+#else
+#define PipeTrace(...)                                                                             \
+  do {                                                                                             \
+  } while (0)
+#endif
 
 // Pipe is a circular read-write buffer.
 // It works like this:
@@ -40,31 +40,36 @@
 // len: 7                    | |
 //                           w r
 //
-template <size_t Size>
-struct Pipe {
+template <size_t Size> struct Pipe {
   // the len function assumes Size < MAX_SIZE_T/2
-  static_assert(Size < std::numeric_limits<size_t>::max()/2, "Size < MAX_SIZE_T/2");
+  static_assert(Size < std::numeric_limits<size_t>::max() / 2, "Size < MAX_SIZE_T/2");
 
-  char   _storage[Size];
+  char _storage[Size];
   size_t _w = 0; // storage write offset
   size_t _r = 0; // storage read offset
 
-  #ifdef DEBUG
+#ifdef DEBUG
   const char* _debugname = "buf";
-  #endif
+#endif
 
-  constexpr size_t cap() const { return Size - 1; }
-  size_t len() const { return (Size - _r + _w) % Size; }
-  size_t avail() const { return (Size - 1 - _w + _r) % Size; }
+  constexpr size_t cap() const {
+    return Size - 1;
+  }
+  size_t len() const {
+    return (Size - _r + _w) % Size;
+  }
+  size_t avail() const {
+    return (Size - 1 - _w + _r) % Size;
+  }
 
   // add data to the beginning of the pipe
-  size_t  write(const char* src, size_t nbyte); // copy <=nbyte of dst into the pipe
-  size_t  writec(char c);                       // add c to the pipe
-  ssize_t readFromFD(int fd, size_t nbyte);     // read <=nbyte from file (-1 on error)
+  size_t write(const char* src, size_t nbyte); // copy <=nbyte of dst into the pipe
+  size_t writec(char c);                       // add c to the pipe
+  ssize_t readFromFD(int fd, size_t nbyte);    // read <=nbyte from file (-1 on error)
 
   // take data out of the end of the pipe
-  size_t  read(char* dst, size_t nbyte);   // copy <=nbyte of data to dst
-  size_t  discard(size_t nbyte);           // read & discard
+  size_t read(char* dst, size_t nbyte);    // copy <=nbyte of data to dst
+  size_t discard(size_t nbyte);            // read & discard
   ssize_t writeToFD(int fd, size_t nbyte); // write <=nbyte to file (-1 on error)
 
   // takeRef removes nbyte and returns a pointer to the removed bytes,
@@ -73,14 +78,18 @@ struct Pipe {
   // The returned memory is only valid until the next call to write() or clear().
   const char* takeRef(size_t nbyte);
 
-  inline char at(size_t index) const { return _storage[_r]; }
+  inline char at(size_t index) const {
+    return _storage[_r];
+  }
 
   // clear drains the pipe by discarding any data waiting to be read
-  void clear() { _w = 0; _r = 0; }
+  void clear() {
+    _w = 0;
+    _r = 0;
+  }
 };
 
-template <size_t Size>
-size_t Pipe<Size>::write(const char* data, size_t nbyte) {
+template <size_t Size> size_t Pipe<Size>::write(const char* data, size_t nbyte) {
   nbyte = std::min(nbyte, avail());
   PipeTrace("write", data, nbyte);
   size_t chunkend = std::min(nbyte, Size - _w);
@@ -90,12 +99,11 @@ size_t Pipe<Size>::write(const char* data, size_t nbyte) {
   return nbyte;
 }
 
-template <size_t Size>
-size_t Pipe<Size>::writec(char c) {
-  #ifdef DEBUG_TRACE_PIPE
+template <size_t Size> size_t Pipe<Size>::writec(char c) {
+#ifdef DEBUG_TRACE_PIPE
   char tmp[1] = {c};
   PipeTrace("writec", tmp, std::min((size_t)1, avail()));
-  #endif
+#endif
   if (avail() == 0)
     return 0;
   _storage[_w] = c;
@@ -103,10 +111,9 @@ size_t Pipe<Size>::writec(char c) {
   return 1;
 }
 
-size_t  writec(char c);
+size_t writec(char c);
 
-template <size_t Size>
-ssize_t Pipe<Size>::readFromFD(int fd, size_t nbyte) {
+template <size_t Size> ssize_t Pipe<Size>::readFromFD(int fd, size_t nbyte) {
   nbyte = std::min(nbyte, avail());
   size_t chunkend = std::min(nbyte, Size - _w);
   ssize_t total = 0;
@@ -127,13 +134,12 @@ ssize_t Pipe<Size>::readFromFD(int fd, size_t nbyte) {
       return n;
     total += n;
   }
- end:
+end:
   _w = (_w + (size_t)total) % Size;
   return total;
 }
 
-template <size_t Size>
-size_t Pipe<Size>::read(char* data, size_t nbyte) {
+template <size_t Size> size_t Pipe<Size>::read(char* data, size_t nbyte) {
   nbyte = std::min(nbyte, len());
   size_t chunkend = std::min(nbyte, Size - _r);
   memcpy(data, _storage + _r, chunkend);
@@ -146,8 +152,7 @@ size_t Pipe<Size>::read(char* data, size_t nbyte) {
   return nbyte;
 }
 
-template <size_t Size>
-ssize_t Pipe<Size>::writeToFD(int fd, size_t nbyte) {
+template <size_t Size> ssize_t Pipe<Size>::writeToFD(int fd, size_t nbyte) {
   nbyte = std::min(nbyte, len());
   size_t chunkend = std::min(nbyte, Size - _r);
   ssize_t total = 0;
@@ -168,21 +173,19 @@ ssize_t Pipe<Size>::writeToFD(int fd, size_t nbyte) {
       return n;
     total += n;
   }
- end:
+end:
   _r = (_r + nbyte) % Size;
   return total;
 }
 
-template <size_t Size>
-size_t Pipe<Size>::discard(size_t nbyte) {
+template <size_t Size> size_t Pipe<Size>::discard(size_t nbyte) {
   nbyte = std::min(nbyte, len());
   PipeTrace("discard", NULL, nbyte);
   _r = (_r + nbyte) % Size;
   return nbyte;
 }
 
-template <size_t Size>
-const char* Pipe<Size>::takeRef(size_t nbyte) {
+template <size_t Size> const char* Pipe<Size>::takeRef(size_t nbyte) {
   // Either w is ahead of e in memory ...
   //   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15
   //      W2   |        R1        |    W1      R=read-from, W=write-to

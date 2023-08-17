@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#define DLOG_PREFIX "\e[1;36m[client]\e[0m "
+
+#include "common.hh"
 #include "protocol.hh"
 
 #include <dawn/common/Assert.h>
@@ -24,85 +27,7 @@
 #include <cmath>
 #include <iostream>
 
-#include <fcntl.h> // F_GETFL, O_NONBLOCK etc
-#include <sys/socket.h>
-#include <sys/un.h>
-#include <time.h>   // strftime
 #include <unistd.h> // pipe
-
-#define DLOG_PREFIX "\e[1;36m[client]\e[0m "
-
-#ifdef DEBUG
-#define dlog(format, ...)                                                                          \
-  ({                                                                                               \
-    fprintf(stderr, "%s " DLOG_PREFIX format " \e[2m(%s %d)\e[0m\n", tmptimestamp(),               \
-            ##__VA_ARGS__, __FUNCTION__, __LINE__);                                                \
-    fflush(stderr);                                                                                \
-  })
-#define errlog(format, ...)                                                                        \
-  (({                                                                                              \
-    fprintf(stderr, "E " format " (%s:%d)\n", ##__VA_ARGS__, __FILE__, __LINE__);                  \
-    fflush(stderr);                                                                                \
-  }))
-#else
-#define dlog(...)                                                                                  \
-  do {                                                                                             \
-  } while (0)
-#define errlog(format, ...)                                                                        \
-  (({                                                                                              \
-    fprintf(stderr, "E " format "\n", ##__VA_ARGS__);                                              \
-    fflush(stderr);                                                                                \
-  }))
-#endif
-
-#define MAX(a, b)                                                                                  \
-  ({                                                                                               \
-    __typeof__(a) _a = (a);                                                                        \
-    __typeof__(b) _b = (b);                                                                        \
-    _a > _b ? _a : _b;                                                                             \
-  })
-
-#define MIN(a, b)                                                                                  \
-  ({                                                                                               \
-    __typeof__(a) _a = (a);                                                                        \
-    __typeof__(b) _b = (b);                                                                        \
-    _a < _b ? _a : _b;                                                                             \
-  })
-
-static const char* tmptimestamp() {
-  time_t now = time(NULL);
-  struct tm* tm_info = localtime(&now);
-  static char buf[16]; // HH:MM:SS.nnnnnn\0
-  int buftimeoffs = strftime(buf, sizeof(buf), "%H:%M:%S", tm_info);
-  // .mmm
-  double t = ev_time();
-  double ms = (t - std::floor(t)) * 1000000.0;
-  int n = snprintf(&buf[buftimeoffs], sizeof(buf) - buftimeoffs, ".%06u", (uint32_t)ms);
-  buf[n + buftimeoffs] = 0;
-  return buf;
-}
-
-static bool FDSetNonBlock(int fd) {
-  int flags = fcntl(fd, F_GETFL);
-  if (flags < 0 || fcntl(fd, F_SETFL, flags | O_NONBLOCK) < 0 ||
-      fcntl(fd, F_SETFD, FD_CLOEXEC)) // FD_CLOEXEC for fork
-  {
-    errno = EWOULDBLOCK;
-    return false;
-  }
-  return true;
-}
-
-int createUNIXSocket(const char* filename, sockaddr_un* addr) {
-  addr->sun_family = AF_UNIX;
-  auto filenameLen = strlen(filename);
-  if (filenameLen > sizeof(addr->sun_path) - 1) {
-    errno = ENAMETOOLONG;
-    return -1;
-  }
-  memcpy(addr->sun_path, filename, filenameLen + 1);
-  return socket(AF_UNIX, SOCK_STREAM, 0);
-}
 
 int connectUNIXSocket(const char* filename) {
   /*struct*/ sockaddr_un addr;

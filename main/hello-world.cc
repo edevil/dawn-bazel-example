@@ -6,13 +6,11 @@
 #include <webgpu/webgpu_cpp.h>
 
 template <typename Enumeration>
-auto as_integer(Enumeration const value) ->
-    typename std::underlying_type<Enumeration>::type {
+auto as_integer(Enumeration const value) -> typename std::underlying_type<Enumeration>::type {
   return static_cast<typename std::underlying_type<Enumeration>::type>(value);
 }
 
-wgpu::Adapter requestAdapter(wgpu::Instance instance,
-                             wgpu::RequestAdapterOptions const *options) {
+wgpu::Adapter requestAdapter(wgpu::Instance instance, wgpu::RequestAdapterOptions const* options) {
   // A simple structure holding the local information shared with the
   // onAdapterRequestEnded callback.
   struct UserData {
@@ -29,21 +27,20 @@ wgpu::Adapter requestAdapter(wgpu::Instance instance,
   // is to convey what we want to capture through the pUserData pointer,
   // provided as the last argument of wgpuInstanceRequestAdapter and received
   // by the callback as its last argument.
-  wgpu::RequestAdapterCallback onAdapterRequestEnded =
-      [](WGPURequestAdapterStatus status, WGPUAdapter adapter,
-         char const *message, void *pUserData) {
-        UserData &userData = *reinterpret_cast<UserData *>(pUserData);
-        if ((wgpu::RequestAdapterStatus)status ==
-            wgpu::RequestAdapterStatus::Success) {
-          userData.adapter = (wgpu::Adapter)adapter;
-        } else {
-          std::cout << "Could not get WebGPU adapter: " << message << std::endl;
-        }
-        userData.requestEnded = true;
-      };
+  wgpu::RequestAdapterCallback onAdapterRequestEnded = [](WGPURequestAdapterStatus status,
+                                                          WGPUAdapter adapter, char const* message,
+                                                          void* pUserData) {
+    UserData& userData = *reinterpret_cast<UserData*>(pUserData);
+    if ((wgpu::RequestAdapterStatus)status == wgpu::RequestAdapterStatus::Success) {
+      userData.adapter = (wgpu::Adapter)adapter;
+    } else {
+      std::cout << "Could not get WebGPU adapter: " << message << std::endl;
+    }
+    userData.requestEnded = true;
+  };
 
   // Call to the WebGPU request adapter procedure
-  instance.RequestAdapter(options, onAdapterRequestEnded, (void *)&userData);
+  instance.RequestAdapter(options, onAdapterRequestEnded, (void*)&userData);
 
   // In theory we should wait until onAdapterReady has been called, which
   // could take some time (what the 'await' keyword does in the JavaScript
@@ -74,58 +71,49 @@ void inspectAdapter(wgpu::Adapter adapter) {
   bool success = adapter.GetLimits(&limits);
   if (success) {
     std::cout << "Adapter limits:" << std::endl;
-    std::cout << " - maxTextureDimension1D: "
-              << limits.limits.maxTextureDimension1D << std::endl;
-    std::cout << " - maxTextureDimension2D: "
-              << limits.limits.maxTextureDimension2D << std::endl;
-    std::cout << " - maxTextureDimension3D: "
-              << limits.limits.maxTextureDimension3D << std::endl;
-    std::cout << " - maxTextureArrayLayers: "
-              << limits.limits.maxTextureArrayLayers << std::endl;
-    std::cout << " - maxBindGroups: " << limits.limits.maxBindGroups
-              << std::endl;
+    std::cout << " - maxTextureDimension1D: " << limits.limits.maxTextureDimension1D << std::endl;
+    std::cout << " - maxTextureDimension2D: " << limits.limits.maxTextureDimension2D << std::endl;
+    std::cout << " - maxTextureDimension3D: " << limits.limits.maxTextureDimension3D << std::endl;
+    std::cout << " - maxTextureArrayLayers: " << limits.limits.maxTextureArrayLayers << std::endl;
+    std::cout << " - maxBindGroups: " << limits.limits.maxBindGroups << std::endl;
     std::cout << " - maxDynamicUniformBuffersPerPipelineLayout: "
-              << limits.limits.maxDynamicUniformBuffersPerPipelineLayout
-              << std::endl;
+              << limits.limits.maxDynamicUniformBuffersPerPipelineLayout << std::endl;
     std::cout << " - maxDynamicStorageBuffersPerPipelineLayout: "
-              << limits.limits.maxDynamicStorageBuffersPerPipelineLayout
-              << std::endl;
+              << limits.limits.maxDynamicStorageBuffersPerPipelineLayout << std::endl;
     std::cout << " - maxSampledTexturesPerShaderStage: "
               << limits.limits.maxSampledTexturesPerShaderStage << std::endl;
-    std::cout << " - maxSamplersPerShaderStage: "
-              << limits.limits.maxSamplersPerShaderStage << std::endl;
+    std::cout << " - maxSamplersPerShaderStage: " << limits.limits.maxSamplersPerShaderStage
+              << std::endl;
     std::cout << " - maxStorageBuffersPerShaderStage: "
               << limits.limits.maxStorageBuffersPerShaderStage << std::endl;
     std::cout << " - maxStorageTexturesPerShaderStage: "
               << limits.limits.maxStorageTexturesPerShaderStage << std::endl;
     std::cout << " - maxUniformBuffersPerShaderStage: "
               << limits.limits.maxUniformBuffersPerShaderStage << std::endl;
-    std::cout << " - maxUniformBufferBindingSize: "
-              << limits.limits.maxUniformBufferBindingSize << std::endl;
-    std::cout << " - maxStorageBufferBindingSize: "
-              << limits.limits.maxStorageBufferBindingSize << std::endl;
+    std::cout << " - maxUniformBufferBindingSize: " << limits.limits.maxUniformBufferBindingSize
+              << std::endl;
+    std::cout << " - maxStorageBufferBindingSize: " << limits.limits.maxStorageBufferBindingSize
+              << std::endl;
     std::cout << " - minUniformBufferOffsetAlignment: "
               << limits.limits.minUniformBufferOffsetAlignment << std::endl;
     std::cout << " - minStorageBufferOffsetAlignment: "
               << limits.limits.minStorageBufferOffsetAlignment << std::endl;
-    std::cout << " - maxVertexBuffers: " << limits.limits.maxVertexBuffers
+    std::cout << " - maxVertexBuffers: " << limits.limits.maxVertexBuffers << std::endl;
+    std::cout << " - maxVertexAttributes: " << limits.limits.maxVertexAttributes << std::endl;
+    std::cout << " - maxVertexBufferArrayStride: " << limits.limits.maxVertexBufferArrayStride
               << std::endl;
-    std::cout << " - maxVertexAttributes: " << limits.limits.maxVertexAttributes
+    std::cout << " - maxInterStageShaderComponents: " << limits.limits.maxInterStageShaderComponents
               << std::endl;
-    std::cout << " - maxVertexBufferArrayStride: "
-              << limits.limits.maxVertexBufferArrayStride << std::endl;
-    std::cout << " - maxInterStageShaderComponents: "
-              << limits.limits.maxInterStageShaderComponents << std::endl;
     std::cout << " - maxComputeWorkgroupStorageSize: "
               << limits.limits.maxComputeWorkgroupStorageSize << std::endl;
     std::cout << " - maxComputeInvocationsPerWorkgroup: "
               << limits.limits.maxComputeInvocationsPerWorkgroup << std::endl;
-    std::cout << " - maxComputeWorkgroupSizeX: "
-              << limits.limits.maxComputeWorkgroupSizeX << std::endl;
-    std::cout << " - maxComputeWorkgroupSizeY: "
-              << limits.limits.maxComputeWorkgroupSizeY << std::endl;
-    std::cout << " - maxComputeWorkgroupSizeZ: "
-              << limits.limits.maxComputeWorkgroupSizeZ << std::endl;
+    std::cout << " - maxComputeWorkgroupSizeX: " << limits.limits.maxComputeWorkgroupSizeX
+              << std::endl;
+    std::cout << " - maxComputeWorkgroupSizeY: " << limits.limits.maxComputeWorkgroupSizeY
+              << std::endl;
+    std::cout << " - maxComputeWorkgroupSizeZ: " << limits.limits.maxComputeWorkgroupSizeZ
+              << std::endl;
     std::cout << " - maxComputeWorkgroupsPerDimension: "
               << limits.limits.maxComputeWorkgroupsPerDimension << std::endl;
   }
@@ -138,17 +126,14 @@ void inspectAdapter(wgpu::Adapter adapter) {
   std::cout << " - deviceID: " << properties.deviceID << std::endl;
   std::cout << " - name: " << properties.name << std::endl;
   if (properties.driverDescription) {
-    std::cout << " - driverDescription: " << properties.driverDescription
-              << std::endl;
+    std::cout << " - driverDescription: " << properties.driverDescription << std::endl;
   }
 
-  std::cout << " - adapterType: " << as_integer(properties.adapterType)
-            << std::endl;
-  std::cout << " - backendType: " << as_integer(properties.backendType)
-            << std::endl;
+  std::cout << " - adapterType: " << as_integer(properties.adapterType) << std::endl;
+  std::cout << " - backendType: " << as_integer(properties.backendType) << std::endl;
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   DawnProcTable backendProcs = dawn::native::GetProcs();
   dawnProcSetProcs(&backendProcs);
 

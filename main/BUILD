@@ -11,6 +11,8 @@ cc_binary(
 cc_binary(
     name = "server",
     srcs = [
+        "common.cc",
+        "common.hh",
         "debug.cc",
         "debug.hh",
         "pipe.cc",
@@ -33,6 +35,8 @@ cc_binary(
     name = "client",
     srcs = [
         "client.cc",
+        "common.cc",
+        "common.hh",
         "debug.cc",
         "debug.hh",
         "pipe.cc",
