@@ -35,6 +35,8 @@ bazel-out/darwin_arm64-dbg/bin/external/bazel_tools
 -Ibazel-bin/external/dawn/include
 -Ibazel-out/darwin_arm64-dbg/bin/external/dawn/include
 -Iexternal/dawn/src
+-Iexternal/libev
+-Iexternal/glfw/include
 -Ibazel-out/darwin_arm64-dbg/bin/external/dawn/src
 -isystem
 external/dawn/include

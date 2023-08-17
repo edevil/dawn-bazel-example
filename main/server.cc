@@ -34,39 +34,37 @@
 #define DLOG_PREFIX "\e[1;34m[server]\e[0m "
 
 #ifdef DEBUG
-#define dlog(format, ...)                                                      \
-  ({                                                                           \
-    fprintf(stderr, "%s " DLOG_PREFIX format " \e[2m(%s %d)\e[0m\n",           \
-            tmptimestamp(), ##__VA_ARGS__, __FUNCTION__, __LINE__);            \
-    fflush(stderr);                                                            \
+#define dlog(format, ...)                                                                          \
+  ({                                                                                               \
+    fprintf(stderr, "%s " DLOG_PREFIX format " \e[2m(%s %d)\e[0m\n", tmptimestamp(),               \
+            ##__VA_ARGS__, __FUNCTION__, __LINE__);                                                \
+    fflush(stderr);                                                                                \
   })
-#define errlog(format, ...)                                                    \
-  (({                                                                          \
-    fprintf(stderr, "E " format " (%s:%d)\n", ##__VA_ARGS__, __FILE__,         \
-            __LINE__);                                                         \
-    fflush(stderr);                                                            \
+#define errlog(format, ...)                                                                        \
+  (({                                                                                              \
+    fprintf(stderr, "E " format " (%s:%d)\n", ##__VA_ARGS__, __FILE__, __LINE__);                  \
+    fflush(stderr);                                                                                \
   }))
 #else
-#define dlog(...)                                                              \
-  do {                                                                         \
+#define dlog(...)                                                                                  \
+  do {                                                                                             \
   } while (0)
-#define errlog(format, ...)                                                    \
-  (({                                                                          \
-    fprintf(stderr, "E " format "\n", ##__VA_ARGS__);                          \
-    fflush(stderr);                                                            \
+#define errlog(format, ...)                                                                        \
+  (({                                                                                              \
+    fprintf(stderr, "E " format "\n", ##__VA_ARGS__);                                              \
+    fflush(stderr);                                                                                \
   }))
 #endif
 
-static const char *tmptimestamp() {
+static const char* tmptimestamp() {
   time_t now = time(NULL);
-  struct tm *tm_info = localtime(&now);
+  struct tm* tm_info = localtime(&now);
   static char buf[16]; // HH:MM:SS.nnnnnn\0
   int buftimeoffs = strftime(buf, sizeof(buf), "%H:%M:%S", tm_info);
   // .mmm
   double t = ev_time();
   double ms = (t - std::floor(t)) * 1000000.0;
-  int n = snprintf(&buf[buftimeoffs], sizeof(buf) - buftimeoffs, ".%06u",
-                   (uint32_t)ms);
+  int n = snprintf(&buf[buftimeoffs], sizeof(buf) - buftimeoffs, ".%06u", (uint32_t)ms);
   buf[n + buftimeoffs] = 0;
   return buf;
 }
@@ -87,7 +85,7 @@ static bool FDSetNonBlock(int fd) {
   return true;
 }
 
-int createUNIXSocket(const char *filename, sockaddr_un *addr) {
+int createUNIXSocket(const char* filename, sockaddr_un* addr) {
   addr->sun_family = AF_UNIX;
   auto filenameLen = strlen(filename);
   if (filenameLen > sizeof(addr->sun_path) - 1) {
@@ -98,13 +96,13 @@ int createUNIXSocket(const char *filename, sockaddr_un *addr) {
   return socket(AF_UNIX, SOCK_STREAM, 0);
 }
 
-int createUNIXSocketServer(const char *filename) {
+int createUNIXSocketServer(const char* filename) {
   /*struct*/ sockaddr_un addr;
   int fd = createUNIXSocket(filename, &addr);
   if (fd > -1) {
     unlink(filename);
     int acceptQueueSize = 5;
-    if (bind(fd, (struct sockaddr *)&addr, sizeof(addr)) == -1 ||
+    if (bind(fd, (struct sockaddr*)&addr, sizeof(addr)) == -1 ||
         listen(fd, acceptQueueSize) == -1) {
       int e = errno;
       close(fd);
@@ -116,8 +114,8 @@ int createUNIXSocketServer(const char *filename) {
   return fd;
 }
 
-const char *sockfile = "server.sock";
-static GLFWwindow *window = nullptr;
+const char* sockfile = "/tmp/server.sock";
+static GLFWwindow* window = nullptr;
 static std::unique_ptr<dawn_native::Instance> instance;
 
 DawnProcTable nativeProcs;
@@ -142,9 +140,8 @@ struct Conn {
   DawnRemoteProtocol _proto;
   dawn_wire::WireServer _wireServer;
 
-  Conn(uint32_t id_)
-      : id(id_), _wireServer({.procs = &nativeProcs, .serializer = &_proto}) {
-    _proto.onDawnBuffer = [this](const char *data, size_t len) {
+  Conn(uint32_t id_) : id(id_), _wireServer({.procs = &nativeProcs, .serializer = &_proto}) {
+    _proto.onDawnBuffer = [this](const char* data, size_t len) {
       // dlog("onDawnBuffer len=%zu", len);
       assert(data != nullptr);
       if (_wireServer.HandleCommands(data, len) == nullptr)
@@ -153,10 +150,9 @@ struct Conn {
         dlog("_proto.Flush() FAILED");
     };
 
-    _proto.onSwapchainReservation =
-        [this](const dawn_wire::ReservedSwapChain &scr) {
-          this->onSwapchainReservation(scr);
-        };
+    _proto.onSwapchainReservation = [this](const dawn_wire::ReservedSwapChain& scr) {
+      this->onSwapchainReservation(scr);
+    };
 
     // Hardcoded generation and IDs need to match what's produced by the client
     // or be sent over through the wire.
@@ -166,9 +162,9 @@ struct Conn {
     // create its swapchain??
   }
 
-  void onSwapchainReservation(const dawn_wire::ReservedSwapChain &scr) {
-    dlog("onSwapchainReservation device: %u %u, swapchain %u %u\n",
-         scr.deviceId, scr.deviceGeneration, scr.id, scr.generation);
+  void onSwapchainReservation(const dawn_wire::ReservedSwapChain& scr) {
+    dlog("onSwapchainReservation device: %u %u, swapchain %u %u\n", scr.deviceId,
+         scr.deviceGeneration, scr.id, scr.generation);
 
     // // recreate swapchain
     // wgpu::SwapChainDescriptor desc = {
@@ -181,16 +177,15 @@ struct Conn {
     // swapchain = device.CreateSwapChain(surface, &desc); // global var
 
     if (_wireServer.GetDevice(scr.deviceId, scr.deviceGeneration) == nullptr) {
-      if (_wireServer.InjectDevice(device.Get(), scr.deviceId,
-                                   scr.deviceGeneration)) {
+      if (_wireServer.InjectDevice(device.Get(), scr.deviceId, scr.deviceGeneration)) {
         dlog("onSwapchainReservation _wireServer.InjectDevice OK");
       } else {
         dlog("onSwapchainReservation _wireServer.InjectDevice FAILED");
       }
     }
 
-    if (_wireServer.InjectSwapChain(swapchain.Get(), scr.id, scr.generation,
-                                    scr.deviceId, scr.deviceGeneration)) {
+    if (_wireServer.InjectSwapChain(swapchain.Get(), scr.id, scr.generation, scr.deviceId,
+                                    scr.deviceGeneration)) {
       dlog("onSwapchainReservation _wireServer.InjectSwapChain OK");
       // createDawnSwapChain();
     } else {
@@ -214,7 +209,9 @@ struct Conn {
     // }
   }
 
-  void start(RunLoop *rl, int fd) { _proto.start(rl, fd); }
+  void start(RunLoop* rl, int fd) {
+    _proto.start(rl, fd);
+  }
 
   bool sendFramebufferInfo() {
     if (_proto.stopped())
@@ -240,7 +237,7 @@ struct Conn {
   void close();
 };
 
-Conn *conn0 = nullptr;
+Conn* conn0 = nullptr;
 
 void Conn::close() {
   _proto.stop();
@@ -268,9 +265,8 @@ static wgpu::BackendType backendType = wgpu::BackendType::OpenGL;
 #error
 #endif
 
-static void PrintDeviceError(WGPUErrorType errorType, const char *message,
-                             void *) {
-  const char *errorTypeName = "";
+static void PrintDeviceError(WGPUErrorType errorType, const char* message, void*) {
+  const char* errorTypeName = "";
   switch (errorType) {
   case WGPUErrorType_Validation:
     errorTypeName = "Validation";
@@ -288,15 +284,14 @@ static void PrintDeviceError(WGPUErrorType errorType, const char *message,
     assert(false);
     return;
   }
-  std::cerr << "device error: " << errorTypeName << " error: " << message
-            << std::endl;
+  std::cerr << "device error: " << errorTypeName << " error: " << message << std::endl;
 }
 
-static void PrintGLFWError(int code, const char *message) {
+static void PrintGLFWError(int code, const char* message) {
   std::cerr << "GLFW error: " << code << " - " << message << std::endl;
 }
 
-const char *backendTypeName(wgpu::BackendType t) {
+const char* backendTypeName(wgpu::BackendType t) {
   switch (t) {
   case wgpu::BackendType::Null:
     return "Null";
@@ -318,7 +313,7 @@ const char *backendTypeName(wgpu::BackendType t) {
   return "?";
 }
 
-const char *adapterTypeName(wgpu::AdapterType t) {
+const char* adapterTypeName(wgpu::AdapterType t) {
   switch (t) {
   case wgpu::AdapterType::DiscreteGPU:
     return "DiscreteGPU";
@@ -333,17 +328,16 @@ const char *adapterTypeName(wgpu::AdapterType t) {
 }
 
 // logAvailableAdapters prints a list of all adapters and their properties
-void logAvailableAdapters(dawn_native::Instance *instance) {
+void logAvailableAdapters(dawn_native::Instance* instance) {
   fprintf(stderr, "Available adapters:\n");
-  for (auto &&a : instance->GetAdapters()) {
+  for (auto&& a : instance->GetAdapters()) {
     wgpu::AdapterProperties p;
     a.GetProperties(&p);
-    fprintf(
-        stderr,
-        "  %s (%s)\n"
-        "    deviceID=%u, vendorID=0x%x, BackendType::%s, AdapterType::%s\n",
-        p.name, p.driverDescription, p.deviceID, p.vendorID,
-        backendTypeName(p.backendType), adapterTypeName(p.adapterType));
+    fprintf(stderr,
+            "  %s (%s)\n"
+            "    deviceID=%u, vendorID=0x%x, BackendType::%s, AdapterType::%s\n",
+            p.name, p.driverDescription, p.deviceID, p.vendorID, backendTypeName(p.backendType),
+            adapterTypeName(p.adapterType));
   }
 }
 
@@ -353,11 +347,10 @@ void updateFramebufferInfo(uint32_t width, uint32_t height) {
   framebufferInfo.height = height;
   float xscale, yscale;
   glfwGetWindowContentScale(window, &xscale, &yscale);
-  framebufferInfo.dpscale =
-      (uint16_t)std::min((double)0xFFFF, (double)xscale * 1000.0);
+  framebufferInfo.dpscale = (uint16_t)std::min((double)0xFFFF, (double)xscale * 1000.0);
 }
 
-void onWindowFramebufferResizeTimer(RunLoop *rl, ev_timer *w, int revents) {
+void onWindowFramebufferResizeTimer(RunLoop* rl, ev_timer* w, int revents) {
   // dlog("onWindowFramebufferResizeTimer");
   ev_timer_stop(rl, w);
   createDawnSwapChain();
@@ -367,7 +360,7 @@ void onWindowFramebufferResizeTimer(RunLoop *rl, ev_timer *w, int revents) {
 
 // onWindowFramebufferResize is called when a window's framebuffer has changed
 // size. width & height are in pixels (the framebuffer size)
-void onWindowFramebufferResize(GLFWwindow *window, int width, int height) {
+void onWindowFramebufferResize(GLFWwindow* window, int width, int height) {
   // dlog("onWindowFramebufferResize width=%d, height=%d", width, height);
 
   updateFramebufferInfo((uint32_t)width, (uint32_t)height);
@@ -388,7 +381,7 @@ void onWindowFramebufferResize(GLFWwindow *window, int width, int height) {
 // onWindowResize is called when a window has been resized
 // Note: onWindowResize is called _after_ onWindowFramebufferResize has been
 // called. width & height are in screen coordinates (i.e. dp)
-void onWindowResize(GLFWwindow *window, int width, int height) {
+void onWindowResize(GLFWwindow* window, int width, int height) {
   // dlog("onWindowResize width=%d, height=%d", width, height);
 }
 
@@ -401,8 +394,7 @@ void createOSWindow() {
 
   // Setup the correct hints for GLFW for backends.
   glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW_FALSE);
-  window = glfwCreateWindow(framebufferInfo.width, framebufferInfo.height,
-                            "hello-wire",
+  window = glfwCreateWindow(framebufferInfo.width, framebufferInfo.height, "hello-wire",
                             /*monitor*/ nullptr, nullptr);
 
   if (!window)
@@ -428,17 +420,16 @@ void createDawnDevice() {
   // Get an adapter for the backend to use, and create the device.
   {
     std::vector<dawn_native::Adapter> adapters = instance->GetAdapters();
-    auto adapterIt =
-        std::find_if(adapters.begin(), adapters.end(),
-                     [](const dawn_native::Adapter adapter) -> bool {
-                       wgpu::AdapterProperties properties;
-                       adapter.GetProperties(&properties);
-                       if (properties.backendType == backendType) {
-                         dlog("using adapter %s", properties.name);
-                         return true;
-                       }
-                       return false;
-                     });
+    auto adapterIt = std::find_if(adapters.begin(), adapters.end(),
+                                  [](const dawn_native::Adapter adapter) -> bool {
+                                    wgpu::AdapterProperties properties;
+                                    adapter.GetProperties(&properties);
+                                    if (properties.backendType == backendType) {
+                                      dlog("using adapter %s", properties.name);
+                                      return true;
+                                    }
+                                    return false;
+                                  });
     assert(adapterIt != adapters.end());
     backendAdapter = *adapterIt; // global var
   }
@@ -456,8 +447,7 @@ void createDawnDevice() {
 }
 
 void createDawnSwapChain() {
-  surface =
-      wgpu::glfw::CreateSurfaceForWindow(instance->Get(), window); // global var
+  surface = wgpu::glfw::CreateSurfaceForWindow(instance->Get(), window); // global var
   wgpu::SwapChainDescriptor desc = {
       .format = framebufferInfo.textureFormat,
       .usage = framebufferInfo.textureUsage,
@@ -469,7 +459,7 @@ void createDawnSwapChain() {
 }
 
 // onServerIO is called when a new connection is awaiting accept
-static void onServerIO(RunLoop *rl, ev_io *w, int revents) {
+static void onServerIO(RunLoop* rl, ev_io* w, int revents) {
   dlog("onServerIO called");
   int fd = accept(w->fd, NULL, NULL);
   if (fd < 0) {
@@ -491,12 +481,12 @@ static void onServerIO(RunLoop *rl, ev_io *w, int revents) {
   conn0->sendFramebufferInfo();
 }
 
-void onPollTimeout(RunLoop *rl, ev_timer *w, int revents) {
+void onPollTimeout(RunLoop* rl, ev_timer* w, int revents) {
   // dlog("poll timeout");
   ev_timer_again(rl, w);
 }
 
-void onFrameTimer(RunLoop *rl, ev_timer *w, int revents) {
+void onFrameTimer(RunLoop* rl, ev_timer* w, int revents) {
   if (conn0) {
     if (!conn0->sendFrameSignal()) {
       // connection closed
@@ -507,7 +497,7 @@ void onFrameTimer(RunLoop *rl, ev_timer *w, int revents) {
   ev_timer_again(rl, w);
 }
 
-int main(int argc, const char *argv[]) {
+int main(int argc, const char* argv[]) {
   dlog("starting UNIX socket server \"%s\"", sockfile);
   int fd = createUNIXSocketServer(sockfile);
   if (fd < 0) {
@@ -519,7 +509,7 @@ int main(int argc, const char *argv[]) {
   createDawnDevice();
   createDawnSwapChain();
 
-  RunLoop *rl = EV_DEFAULT;
+  RunLoop* rl = EV_DEFAULT;
 
   // register I/O callback for the socket file descriptor
   FDSetNonBlock(fd);

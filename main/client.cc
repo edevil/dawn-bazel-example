@@ -33,53 +33,51 @@
 #define DLOG_PREFIX "\e[1;36m[client]\e[0m "
 
 #ifdef DEBUG
-#define dlog(format, ...)                                                      \
-  ({                                                                           \
-    fprintf(stderr, "%s " DLOG_PREFIX format " \e[2m(%s %d)\e[0m\n",           \
-            tmptimestamp(), ##__VA_ARGS__, __FUNCTION__, __LINE__);            \
-    fflush(stderr);                                                            \
+#define dlog(format, ...)                                                                          \
+  ({                                                                                               \
+    fprintf(stderr, "%s " DLOG_PREFIX format " \e[2m(%s %d)\e[0m\n", tmptimestamp(),               \
+            ##__VA_ARGS__, __FUNCTION__, __LINE__);                                                \
+    fflush(stderr);                                                                                \
   })
-#define errlog(format, ...)                                                    \
-  (({                                                                          \
-    fprintf(stderr, "E " format " (%s:%d)\n", ##__VA_ARGS__, __FILE__,         \
-            __LINE__);                                                         \
-    fflush(stderr);                                                            \
+#define errlog(format, ...)                                                                        \
+  (({                                                                                              \
+    fprintf(stderr, "E " format " (%s:%d)\n", ##__VA_ARGS__, __FILE__, __LINE__);                  \
+    fflush(stderr);                                                                                \
   }))
 #else
-#define dlog(...)                                                              \
-  do {                                                                         \
+#define dlog(...)                                                                                  \
+  do {                                                                                             \
   } while (0)
-#define errlog(format, ...)                                                    \
-  (({                                                                          \
-    fprintf(stderr, "E " format "\n", ##__VA_ARGS__);                          \
-    fflush(stderr);                                                            \
+#define errlog(format, ...)                                                                        \
+  (({                                                                                              \
+    fprintf(stderr, "E " format "\n", ##__VA_ARGS__);                                              \
+    fflush(stderr);                                                                                \
   }))
 #endif
 
-#define MAX(a, b)                                                              \
-  ({                                                                           \
-    __typeof__(a) _a = (a);                                                    \
-    __typeof__(b) _b = (b);                                                    \
-    _a > _b ? _a : _b;                                                         \
+#define MAX(a, b)                                                                                  \
+  ({                                                                                               \
+    __typeof__(a) _a = (a);                                                                        \
+    __typeof__(b) _b = (b);                                                                        \
+    _a > _b ? _a : _b;                                                                             \
   })
 
-#define MIN(a, b)                                                              \
-  ({                                                                           \
-    __typeof__(a) _a = (a);                                                    \
-    __typeof__(b) _b = (b);                                                    \
-    _a < _b ? _a : _b;                                                         \
+#define MIN(a, b)                                                                                  \
+  ({                                                                                               \
+    __typeof__(a) _a = (a);                                                                        \
+    __typeof__(b) _b = (b);                                                                        \
+    _a < _b ? _a : _b;                                                                             \
   })
 
-static const char *tmptimestamp() {
+static const char* tmptimestamp() {
   time_t now = time(NULL);
-  struct tm *tm_info = localtime(&now);
+  struct tm* tm_info = localtime(&now);
   static char buf[16]; // HH:MM:SS.nnnnnn\0
   int buftimeoffs = strftime(buf, sizeof(buf), "%H:%M:%S", tm_info);
   // .mmm
   double t = ev_time();
   double ms = (t - std::floor(t)) * 1000000.0;
-  int n = snprintf(&buf[buftimeoffs], sizeof(buf) - buftimeoffs, ".%06u",
-                   (uint32_t)ms);
+  int n = snprintf(&buf[buftimeoffs], sizeof(buf) - buftimeoffs, ".%06u", (uint32_t)ms);
   buf[n + buftimeoffs] = 0;
   return buf;
 }
@@ -95,7 +93,7 @@ static bool FDSetNonBlock(int fd) {
   return true;
 }
 
-int createUNIXSocket(const char *filename, sockaddr_un *addr) {
+int createUNIXSocket(const char* filename, sockaddr_un* addr) {
   addr->sun_family = AF_UNIX;
   auto filenameLen = strlen(filename);
   if (filenameLen > sizeof(addr->sun_path) - 1) {
@@ -106,11 +104,11 @@ int createUNIXSocket(const char *filename, sockaddr_un *addr) {
   return socket(AF_UNIX, SOCK_STREAM, 0);
 }
 
-int connectUNIXSocket(const char *filename) {
+int connectUNIXSocket(const char* filename) {
   /*struct*/ sockaddr_un addr;
   int fd = createUNIXSocket(filename, &addr);
   if (fd > -1) {
-    if (connect(fd, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
+    if (connect(fd, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
       int e = errno;
       close(fd);
       errno = e;
@@ -120,9 +118,8 @@ int connectUNIXSocket(const char *filename) {
   return fd;
 }
 
-static void printDeviceError(WGPUErrorType errorType, const char *message,
-                             void *) {
-  const char *errorTypeName = "";
+static void printDeviceError(WGPUErrorType errorType, const char* message, void*) {
+  const char* errorTypeName = "";
   switch (errorType) {
   case WGPUErrorType_Validation:
     errorTypeName = "Validation";
@@ -140,14 +137,13 @@ static void printDeviceError(WGPUErrorType errorType, const char *message,
     UNREACHABLE();
     return;
   }
-  std::cerr << "device error: " << errorTypeName << " error: " << message
-            << std::endl;
+  std::cerr << "device error: " << errorTypeName << " error: " << message << std::endl;
 }
 
 struct Connection {
   DawnRemoteProtocol proto;
 
-  dawn_wire::WireClient *wireClient = nullptr;
+  dawn_wire::WireClient* wireClient = nullptr;
   wgpu::Device device;
   wgpu::SwapChain swapchain;
   wgpu::RenderPipeline pipeline;
@@ -174,14 +170,13 @@ struct Connection {
     device = wgpu::Device::Acquire(deviceReservation.device); // global var
 
     DawnProcTable procs = dawn_wire::client::GetProcs();
-    procs.deviceSetUncapturedErrorCallback(device.Get(), printDeviceError,
-                                           nullptr);
+    procs.deviceSetUncapturedErrorCallback(device.Get(), printDeviceError, nullptr);
     dawnProcSetProcs(&procs);
   }
 
   void initDawnPipeline() {
-    utils::ComboRenderPipelineDescriptor desc;
-    desc.vertex.module = utils::CreateShaderModule(device, R"(
+    dawn::utils::ComboRenderPipelineDescriptor desc;
+    desc.vertex.module = dawn::utils::CreateShaderModule(device, R"(
       let pos : array<vec2<f32>, 3> = array<vec2<f32>, 3>(
           vec2<f32>( 0.0,  0.5),
           vec2<f32>(-0.5, -0.5),
@@ -193,7 +188,7 @@ struct Connection {
           return vec4<f32>(pos[VertexIndex], 0.0, 1.0);
       }
     )");
-    desc.cFragment.module = utils::CreateShaderModule(device, R"(
+    desc.cFragment.module = dawn::utils::CreateShaderModule(device, R"(
       [[stage(fragment)]] fn main() -> [[location(0)]] vec4<f32> {
           return vec4<f32>(1.0, 0.0, 0.7, 1.0);
       }
@@ -203,7 +198,7 @@ struct Connection {
     pipeline = device.CreateRenderPipeline(&desc); // global var
   }
 
-  void start(RunLoop *rl, int fd) {
+  void start(RunLoop* rl, int fd) {
     initDawnWire();
     initDawnPipeline();
     proto.start(rl, fd);
@@ -224,8 +219,7 @@ struct Connection {
       BLUE = std::abs(cosf(float(fc * 10) / 80));
     }
 
-    dlog("render frame=%zu animate=%zu, R=%zf G=%zf B=%zf", fc, animate, RED,
-         GREEN, BLUE);
+    dlog("render frame=%zu animate=%zu, R=%zf G=%zf B=%zf", fc, animate, RED, GREEN, BLUE);
 
     wgpu::RenderPassColorAttachment colorAttachment;
     colorAttachment.view = swapchain.GetCurrentTextureView();
@@ -241,7 +235,7 @@ struct Connection {
     wgpu::RenderPassEncoder pass = encoder.BeginRenderPass(&renderPassDesc);
     pass.SetPipeline(pipeline);
     pass.Draw(3);
-    pass.EndPass();
+    pass.End();
 
     wgpu::CommandBuffer commands = encoder.Finish();
     device.GetQueue().Submit(1, &commands);
@@ -253,61 +247,56 @@ struct Connection {
 };
 
 void runloop_main(int fd) {
-  RunLoop *rl = EV_DEFAULT;
+  RunLoop* rl = EV_DEFAULT;
   FDSetNonBlock(fd);
 
   Connection conn;
 
   conn.proto.onFrame = [&]() { conn.render_frame(); };
 
-  conn.proto.onDawnBuffer = [&](const char *data, size_t len) {
+  conn.proto.onDawnBuffer = [&](const char* data, size_t len) {
     dlog("onDawnBuffer len=%zu", len);
     assert(conn.wireClient != nullptr);
     if (conn.wireClient->HandleCommands(data, len) == nullptr)
       dlog("wireClient->HandleCommands FAILED");
   };
 
-  conn.proto.onFramebufferInfo =
-      [&](const DawnRemoteProtocol::FramebufferInfo &fbinfo) {
-        double dpscale = (double)fbinfo.dpscale / 1000.0;
-        dlog("onFramebufferInfo %ux%u@%.2f", fbinfo.width, fbinfo.height,
-             dpscale);
+  conn.proto.onFramebufferInfo = [&](const DawnRemoteProtocol::FramebufferInfo& fbinfo) {
+    double dpscale = (double)fbinfo.dpscale / 1000.0;
+    dlog("onFramebufferInfo %ux%u@%.2f", fbinfo.width, fbinfo.height, dpscale);
 
 #define ENABLE_FBINFO_WORKAROUND_RESTART
 #ifdef ENABLE_FBINFO_WORKAROUND_RESTART
-        // XXX FIXME
-        // This is a terrible and temporary fix util we can figure out how to
-        // make Dawn sync and update its swapchain resevation and/or wire client
-        // & server, etc. Whenever the server framebuffer changes, drop this
-        // connection and restart the client with a new connection.
-        if (conn.swapchain) {
-          conn.proto.stop();
-          return;
-        }
+    // XXX FIXME
+    // This is a terrible and temporary fix util we can figure out how to
+    // make Dawn sync and update its swapchain resevation and/or wire client
+    // & server, etc. Whenever the server framebuffer changes, drop this
+    // connection and restart the client with a new connection.
+    if (conn.swapchain) {
+      conn.proto.stop();
+      return;
+    }
 #endif
 
-        // [WORK IN PROGRESS] replace/update swapchain
-        dlog("reserving new swapchain");
-        if (conn.swapchain) {
-          conn.wireClient->ReclaimSwapChainReservation(
-              conn.swapchainReservation);
-        }
-        conn.swapchainReservation =
-            conn.wireClient->ReserveSwapChain(conn.device.Get());
-        conn.swapchain =
-            wgpu::SwapChain::Acquire(conn.swapchainReservation.swapchain);
-        dlog("sending swapchain reservation to server");
-        conn.proto.sendReservation(conn.swapchainReservation);
-      };
+    // [WORK IN PROGRESS] replace/update swapchain
+    dlog("reserving new swapchain");
+    if (conn.swapchain) {
+      conn.wireClient->ReclaimSwapChainReservation(conn.swapchainReservation);
+    }
+    conn.swapchainReservation = conn.wireClient->ReserveSwapChain(conn.device.Get());
+    conn.swapchain = wgpu::SwapChain::Acquire(conn.swapchainReservation.swapchain);
+    dlog("sending swapchain reservation to server");
+    conn.proto.sendReservation(conn.swapchainReservation);
+  };
 
   conn.start(rl, fd);
   ev_run(rl, 0);
   dlog("exit runloop");
 }
 
-int main(int argc, const char *argv[]) {
+int main(int argc, const char* argv[]) {
   bool first_retry = true;
-  const char *sockfile = "server.sock";
+  const char* sockfile = "/tmp/server.sock";
   while (1) {
     if (first_retry) {
       dlog("connecting to UNIX socket \"%s\" ...", sockfile);

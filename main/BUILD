@@ -29,6 +29,26 @@ cc_binary(
     ],
 )
 
+cc_binary(
+    name = "client",
+    srcs = [
+        "client.cc",
+        "debug.cc",
+        "debug.hh",
+        "pipe.cc",
+        "pipe.hh",
+        "protocol.cc",
+        "protocol.hh",
+    ],
+    deps = [
+        "//deps/libev",
+        "@dawn//:dawn_cpp",
+        "@dawn//:dawn_proc",
+        "@dawn//:dawn_utils",
+        "@dawn//:dawn_wire",
+    ],
+)
+
 objc_library(
     name = "glfw_utils",
     srcs = ["utils_metal.mm"],
