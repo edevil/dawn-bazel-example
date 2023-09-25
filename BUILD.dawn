@@ -959,6 +959,7 @@ cc_library(
         "src/dawn/utils/WireHelper.cpp",
         "src/dawn/utils/WireHelper.h",
     ],
+    hdrs = DAWN_HDRS,
     includes = [
         "include",
         "src",
