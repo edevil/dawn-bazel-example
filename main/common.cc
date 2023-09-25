@@ -35,3 +35,39 @@ int createUNIXSocket(const char* filename, sockaddr_un* addr) {
   memcpy(addr->sun_path, filename, filenameLen + 1);
   return socket(AF_UNIX, SOCK_STREAM, 0);
 }
+
+const char* backendTypeName(wgpu::BackendType t) {
+  switch (t) {
+  case wgpu::BackendType::Null:
+    return "Null";
+  case wgpu::BackendType::WebGPU:
+    return "WebGPU";
+  case wgpu::BackendType::D3D11:
+    return "D3D11";
+  case wgpu::BackendType::D3D12:
+    return "D3D12";
+  case wgpu::BackendType::Metal:
+    return "Metal";
+  case wgpu::BackendType::Vulkan:
+    return "Vulkan";
+  case wgpu::BackendType::OpenGL:
+    return "OpenGL";
+  case wgpu::BackendType::OpenGLES:
+    return "OpenGLES";
+  }
+  return "?";
+}
+
+const char* adapterTypeName(wgpu::AdapterType t) {
+  switch (t) {
+  case wgpu::AdapterType::DiscreteGPU:
+    return "DiscreteGPU";
+  case wgpu::AdapterType::IntegratedGPU:
+    return "IntegratedGPU";
+  case wgpu::AdapterType::CPU:
+    return "CPU";
+  case wgpu::AdapterType::Unknown:
+    return "Unknown";
+  }
+  return "?";
+}

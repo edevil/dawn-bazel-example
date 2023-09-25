@@ -94,9 +94,7 @@ struct DawnRemoteProtocol : public dawn::wire::CommandSerializer {
   // bool sendDawnCommands(const char* src, size_t nbyte);
 
   // dawn_wire::CommandSerializer
-  size_t GetMaximumAllocationSize() const override {
-    return DAWNCMD_MAX;
-  }
+  size_t GetMaximumAllocationSize() const override;
   void* GetCmdSpace(size_t size) override;
   bool Flush() override;
 

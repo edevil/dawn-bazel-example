@@ -1,5 +1,6 @@
 #pragma once
 
+#include <dawn/webgpu_cpp.h>
 #include <fcntl.h> // F_GETFL, O_NONBLOCK etc
 #include <iostream>
 #include <sys/socket.h>
@@ -34,3 +35,5 @@
 const char* tmptimestamp();
 bool FDSetNonBlock(int fd);
 int createUNIXSocket(const char* filename, sockaddr_un* addr);
+const char* backendTypeName(wgpu::BackendType t);
+const char* adapterTypeName(wgpu::AdapterType t);

@@ -345,8 +345,13 @@ void* DawnRemoteProtocol::GetCmdSpace(size_t size) {
   return result;
 }
 
+size_t DawnRemoteProtocol::GetMaximumAllocationSize() const {
+  trace("GetMaximumAllocationSize()");
+  return DAWNCMD_MAX;
+}
+
 bool DawnRemoteProtocol::Flush() {
-  trace("flush dawn command data %u", _dawnout.writelen);
+  trace("Flush dawn command data %u", _dawnout.writelen);
   assert(_dawnout.flushlen == 0 /* is done flushing previous buffer */);
   if (_dawnout.writelen > DAWNCMD_MSG_HEADER_SIZE) {
     // write header (preallocated at writebuf[0..DAWNCMD_MSG_HEADER_SIZE])

@@ -92,6 +92,15 @@ wgpu::Adapter requestAdapter(wgpu::Instance instance, wgpu::RequestAdapterOption
       std::cout << "Could not get WebGPU adapter: " << message << std::endl;
     }
     userData.requestEnded = true;
+    dlog("got webgpu adapter");
+
+    wgpu::AdapterProperties p;
+    userData.adapter.GetProperties(&p);
+    fprintf(stderr,
+            "  %s (%s)\n"
+            "    deviceID=%u, vendorID=0x%x, BackendType::%s, AdapterType::%s\n",
+            p.name, p.driverDescription, p.deviceID, p.vendorID, backendTypeName(p.backendType),
+            adapterTypeName(p.adapterType));
   };
 
   // Call to the WebGPU request adapter procedure
@@ -101,11 +110,11 @@ wgpu::Adapter requestAdapter(wgpu::Instance instance, wgpu::RequestAdapterOption
   // could take some time (what the 'await' keyword does in the JavaScript
   // code). In practice, we know that when the wgpuInstanceRequestAdapter()
   // function returns its callback has been called.
-  //
+
   // TODO: Actually, now that we're using dawn wire this is not guaranteed and
   // is failing. Also need to InjectInstance from the server side with the correct
   // (id, generation)
-  assert(userData.requestEnded);
+  // assert(userData.requestEnded);
 
   return userData.adapter;
 }
@@ -117,7 +126,9 @@ struct Connection {
   wgpu::Device device;
   wgpu::SwapChain swapchain;
   wgpu::RenderPipeline pipeline;
+  wgpu::Instance instance;
 
+  dawn_wire::ReservedInstance instanceReservation;
   dawn_wire::ReservedDevice deviceReservation;
   dawn_wire::ReservedSwapChain swapchainReservation;
 
@@ -142,8 +153,8 @@ struct Connection {
     clientDesc.serializer = &proto;
     wireClient = new dawn_wire::WireClient(clientDesc); // global var
 
-    auto instanceReservation = wireClient->ReserveInstance();
-    auto instance = wgpu::Instance::Acquire(instanceReservation.instance);
+    instanceReservation = wireClient->ReserveInstance();
+    instance = wgpu::Instance::Acquire(instanceReservation.instance);
 
     wgpu::RequestAdapterOptions adapterOpts = {};
     adapterOpts.nextInChain = nullptr;
@@ -151,7 +162,7 @@ struct Connection {
 
     deviceReservation = wireClient->ReserveDevice();
     device = wgpu::Device::Acquire(deviceReservation.device); // global var
-    // device.SetUncapturedErrorCallback(printDeviceError, nullptr);
+    device.SetUncapturedErrorCallback(printDeviceError, nullptr);
   }
 
   void initDawnPipeline() {
@@ -191,6 +202,11 @@ struct Connection {
   // runs in response to onFrame callback
   void render_frame() {
     fc++;
+
+    // ANDRE, render just the first frame
+    if (fc > 1) {
+      return;
+    }
 
     float RED = 0.4;
     float GREEN = 0.4;

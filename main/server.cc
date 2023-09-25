@@ -114,6 +114,12 @@ struct Conn {
     // };
     // swapchain = device.CreateSwapChain(surface, &desc); // global var
 
+    if (_wireServer.InjectInstance(instance->Get(), scr.id, scr.generation)) {
+      dlog("onSwapchainReservation _wireServer.InjectInstance OK");
+    } else {
+      dlog("onSwapchainReservation _wireServer.InjectInstance FAILED");
+    };
+
     if (_wireServer.GetDevice(scr.deviceId, scr.deviceGeneration) == nullptr) {
       if (_wireServer.InjectDevice(device.Get(), scr.deviceId, scr.deviceGeneration)) {
         dlog("onSwapchainReservation _wireServer.InjectDevice OK");
@@ -227,42 +233,6 @@ static void PrintDeviceError(WGPUErrorType errorType, const char* message, void*
 
 static void PrintGLFWError(int code, const char* message) {
   std::cerr << "GLFW error: " << code << " - " << message << std::endl;
-}
-
-const char* backendTypeName(wgpu::BackendType t) {
-  switch (t) {
-  case wgpu::BackendType::Null:
-    return "Null";
-  case wgpu::BackendType::WebGPU:
-    return "WebGPU";
-  case wgpu::BackendType::D3D11:
-    return "D3D11";
-  case wgpu::BackendType::D3D12:
-    return "D3D12";
-  case wgpu::BackendType::Metal:
-    return "Metal";
-  case wgpu::BackendType::Vulkan:
-    return "Vulkan";
-  case wgpu::BackendType::OpenGL:
-    return "OpenGL";
-  case wgpu::BackendType::OpenGLES:
-    return "OpenGLES";
-  }
-  return "?";
-}
-
-const char* adapterTypeName(wgpu::AdapterType t) {
-  switch (t) {
-  case wgpu::AdapterType::DiscreteGPU:
-    return "DiscreteGPU";
-  case wgpu::AdapterType::IntegratedGPU:
-    return "IntegratedGPU";
-  case wgpu::AdapterType::CPU:
-    return "CPU";
-  case wgpu::AdapterType::Unknown:
-    return "Unknown";
-  }
-  return "?";
 }
 
 // logAvailableAdapters prints a list of all adapters and their properties
