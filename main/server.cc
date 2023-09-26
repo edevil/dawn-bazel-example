@@ -80,12 +80,14 @@ struct Conn {
 
   Conn(uint32_t id_) : id(id_), _wireServer({.procs = &nativeProcs, .serializer = &_proto}) {
     _proto.onDawnBuffer = [this](const char* data, size_t len) {
-      // dlog("onDawnBuffer len=%zu", len);
+      dlog("onDawnBuffer len=%zu", len);
       assert(data != nullptr);
-      if (_wireServer.HandleCommands(data, len) == nullptr)
+      if (_wireServer.HandleCommands(data, len) == nullptr) {
         dlog("onDawnBuffer: _wireServer.HandleCommands FAILED");
-      if (!_proto.Flush())
+      }
+      if (!_proto.Flush()) {
         dlog("_proto.Flush() FAILED");
+      }
     };
 
     _proto.onSwapchainReservation = [this](const dawn_wire::ReservedSwapChain& scr) {
@@ -131,26 +133,9 @@ struct Conn {
     if (_wireServer.InjectSwapChain(swapchain.Get(), scr.id, scr.generation, scr.deviceId,
                                     scr.deviceGeneration)) {
       dlog("onSwapchainReservation _wireServer.InjectSwapChain OK");
-      // createDawnSwapChain();
     } else {
       dlog("onSwapchainReservation _wireServer.InjectSwapChain FAILED");
-      // ObjectData<WGPUSwapChain>* data =
-      // _wireServer.SwapChainObjects().Allocate(scr.id);
-      // dlog("SwapChainObjects().Allocate => %p", data);
     }
-
-    // // if (!_wireServer.InjectDevice(device.Get(), scr.deviceId,
-    // scr.deviceGeneration)) {
-    // //   dlog("onDeviceReservation _wireServer.InjectDevice FAILED");
-    // //   return;
-    // // }
-    // if (!_wireServer.InjectSwapChain(
-    //   swapchain.Get(), scr.id, scr.generation, scr.deviceId,
-    //   scr.deviceGeneration))
-    // {
-    //   dlog("onSwapchainReservation _wireServer.InjectSwapChain FAILED");
-    //   // this->close();
-    // }
   }
 
   void start(RunLoop* rl, int fd) {
@@ -158,8 +143,9 @@ struct Conn {
   }
 
   bool sendFramebufferInfo() {
-    if (_proto.stopped())
+    if (_proto.stopped()) {
       return false;
+    }
     dlog("sending framebuffer info to client #%u", this->id);
     return _proto.sendFramebufferInfo(framebufferInfo);
   }
@@ -185,8 +171,9 @@ Conn* conn0 = nullptr;
 
 void Conn::close() {
   _proto.stop();
-  if (_proto.fd() != -1)
+  if (_proto.fd() != -1) {
     ::close(_proto.fd());
+  }
   if (this == conn0) {
     conn0 = nullptr;
     delete this;
@@ -208,28 +195,6 @@ static wgpu::BackendType backendType = wgpu::BackendType::OpenGL;
 #else
 #error
 #endif
-
-static void PrintDeviceError(WGPUErrorType errorType, const char* message, void*) {
-  const char* errorTypeName = "";
-  switch (errorType) {
-  case WGPUErrorType_Validation:
-    errorTypeName = "Validation";
-    break;
-  case WGPUErrorType_OutOfMemory:
-    errorTypeName = "Out of memory";
-    break;
-  case WGPUErrorType_Unknown:
-    errorTypeName = "Unknown";
-    break;
-  case WGPUErrorType_DeviceLost:
-    errorTypeName = "Device lost";
-    break;
-  default:
-    assert(false);
-    return;
-  }
-  std::cerr << "device error: " << errorTypeName << " error: " << message << std::endl;
-}
 
 static void PrintGLFWError(int code, const char* message) {
   std::cerr << "GLFW error: " << code << " - " << message << std::endl;
@@ -258,65 +223,27 @@ void updateFramebufferInfo(uint32_t width, uint32_t height) {
   framebufferInfo.dpscale = (uint16_t)std::min((double)0xFFFF, (double)xscale * 1000.0);
 }
 
-void onWindowFramebufferResizeTimer(RunLoop* rl, ev_timer* w, int revents) {
-  // dlog("onWindowFramebufferResizeTimer");
-  ev_timer_stop(rl, w);
-  createDawnSwapChain();
-  if (conn0)
-    conn0->sendFramebufferInfo();
-}
-
-// onWindowFramebufferResize is called when a window's framebuffer has changed
-// size. width & height are in pixels (the framebuffer size)
-void onWindowFramebufferResize(GLFWwindow* window, int width, int height) {
-  // dlog("onWindowFramebufferResize width=%d, height=%d", width, height);
-
-  updateFramebufferInfo((uint32_t)width, (uint32_t)height);
-
-  static ev_timer debounce_timer;
-  static bool debounce_timer_init = false;
-  if (!debounce_timer_init) {
-    debounce_timer_init = true;
-    // debounce_timer.repeat = 0.100;
-    ev_timer_init(&debounce_timer, onWindowFramebufferResizeTimer, 0.0, 0.100);
-    ev_timer_start(EV_DEFAULT, &debounce_timer);
-    ev_unref(EV_DEFAULT); // don't allow timer to keep runloop alive alone
-  } else {
-    ev_timer_again(EV_DEFAULT, &debounce_timer);
-  }
-}
-
-// onWindowResize is called when a window has been resized
-// Note: onWindowResize is called _after_ onWindowFramebufferResize has been
-// called. width & height are in screen coordinates (i.e. dp)
-void onWindowResize(GLFWwindow* window, int width, int height) {
-  // dlog("onWindowResize width=%d, height=%d", width, height);
-}
-
 void createOSWindow() {
   assert(window == nullptr);
 
   glfwSetErrorCallback(PrintGLFWError);
-  if (!glfwInit())
+  if (!glfwInit()) {
     return;
+  }
 
   // Setup the correct hints for GLFW for backends.
   glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW_FALSE);
   window = glfwCreateWindow(framebufferInfo.width, framebufferInfo.height, "hello-wire",
                             /*monitor*/ nullptr, nullptr);
 
-  if (!window)
+  if (!window) {
     return;
+  }
 
   // get actual framebuffer size
   int width, height;
   glfwGetFramebufferSize(window, &width, &height);
   updateFramebufferInfo((uint32_t)width, (uint32_t)height);
-
-  // Note: We can use glfwSetWindowUserPointer and glfwGetWindowUserPointer to
-  // attach some custom state to a GLFW window.
-  glfwSetFramebufferSizeCallback(window, onWindowFramebufferResize);
-  glfwSetWindowSizeCallback(window, onWindowResize);
 }
 
 void createDawnDevice() {
@@ -351,7 +278,7 @@ void createDawnDevice() {
   device = wgpu::Device::Acquire(backendAdapter.CreateDevice()); // global var
 
   // hook up error reporting
-  device.SetUncapturedErrorCallback(PrintDeviceError, nullptr);
+  device.SetUncapturedErrorCallback(printDeviceError, nullptr);
 }
 
 void createDawnSwapChain() {
@@ -371,8 +298,9 @@ static void onServerIO(RunLoop* rl, ev_io* w, int revents) {
   dlog("onServerIO called");
   int fd = accept(w->fd, NULL, NULL);
   if (fd < 0) {
-    if (errno != EAGAIN)
+    if (errno != EAGAIN) {
       perror("accept");
+    }
     return;
   }
   FDSetNonBlock(fd);
@@ -440,14 +368,15 @@ int main(int argc, const char* argv[]) {
   ev_unref(rl); // don't allow timer to keep runloop alive alone
 
   while (!glfwWindowShouldClose(window)) {
-    // double t1 = glfwGetTime(); // measure time for stats
     glfwPollEvents();       // check for OS events
     ev_run(rl, EVRUN_ONCE); // poll for I/O events
   }
 
   dlog("exit");
-  if (conn0)
+  if (conn0) {
     conn0->close();
+  }
+
   ev_io_stop(rl, &server_fd_watcher);
   ev_timer_stop(rl, &timer);
   close(fd);

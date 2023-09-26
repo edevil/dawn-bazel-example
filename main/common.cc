@@ -71,3 +71,25 @@ const char* adapterTypeName(wgpu::AdapterType t) {
   }
   return "?";
 }
+
+void printDeviceError(WGPUErrorType errorType, const char* message, void*) {
+  const char* errorTypeName = "";
+  switch (errorType) {
+  case WGPUErrorType_Validation:
+    errorTypeName = "Validation";
+    break;
+  case WGPUErrorType_OutOfMemory:
+    errorTypeName = "Out of memory";
+    break;
+  case WGPUErrorType_Unknown:
+    errorTypeName = "Unknown";
+    break;
+  case WGPUErrorType_DeviceLost:
+    errorTypeName = "Device lost";
+    break;
+  default:
+    UNREACHABLE();
+    return;
+  }
+  std::cerr << "device error: " << errorTypeName << " error: " << message << std::endl;
+}

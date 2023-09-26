@@ -43,28 +43,6 @@ int connectUNIXSocket(const char* filename) {
   return fd;
 }
 
-static void printDeviceError(WGPUErrorType errorType, const char* message, void*) {
-  const char* errorTypeName = "";
-  switch (errorType) {
-  case WGPUErrorType_Validation:
-    errorTypeName = "Validation";
-    break;
-  case WGPUErrorType_OutOfMemory:
-    errorTypeName = "Out of memory";
-    break;
-  case WGPUErrorType_Unknown:
-    errorTypeName = "Unknown";
-    break;
-  case WGPUErrorType_DeviceLost:
-    errorTypeName = "Device lost";
-    break;
-  default:
-    UNREACHABLE();
-    return;
-  }
-  std::cerr << "device error: " << errorTypeName << " error: " << message << std::endl;
-}
-
 wgpu::Adapter requestAdapter(wgpu::Instance instance, wgpu::RequestAdapterOptions const* options) {
   // A simple structure holding the local information shared with the
   // onAdapterRequestEnded callback.

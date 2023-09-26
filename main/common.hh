@@ -1,5 +1,6 @@
 #pragma once
 
+#include <dawn/common/Assert.h>
 #include <dawn/webgpu_cpp.h>
 #include <fcntl.h> // F_GETFL, O_NONBLOCK etc
 #include <iostream>
@@ -37,3 +38,4 @@ bool FDSetNonBlock(int fd);
 int createUNIXSocket(const char* filename, sockaddr_un* addr);
 const char* backendTypeName(wgpu::BackendType t);
 const char* adapterTypeName(wgpu::AdapterType t);
+void printDeviceError(WGPUErrorType errorType, const char* message, void*);
