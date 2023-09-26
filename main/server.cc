@@ -361,11 +361,11 @@ int main(int argc, const char* argv[]) {
   ev_unref(rl); // don't allow timer to keep runloop alive alone
 
   // use a timer to drive the runloop so we can call glfwPollEvents often enough
-  ev_timer timer;
-  ev_init(&timer, onPollTimeout);
-  timer.repeat = 1.0 / 60.0;
-  ev_timer_again(rl, &timer);
-  ev_unref(rl); // don't allow timer to keep runloop alive alone
+  // ev_timer timer;
+  // ev_init(&timer, onPollTimeout);
+  // timer.repeat = 1.0 / 60.0;
+  // ev_timer_again(rl, &timer);
+  // ev_unref(rl); // don't allow timer to keep runloop alive alone
 
   while (!glfwWindowShouldClose(window)) {
     glfwPollEvents();       // check for OS events
@@ -378,7 +378,7 @@ int main(int argc, const char* argv[]) {
   }
 
   ev_io_stop(rl, &server_fd_watcher);
-  ev_timer_stop(rl, &timer);
+  // ev_timer_stop(rl, &timer);
   close(fd);
   unlink(sockfile);
   return 0;
