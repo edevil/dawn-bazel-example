@@ -119,6 +119,8 @@ struct Conn {
         dlog("onSwapchainReservation _wireServer.InjectDevice FAILED");
       }
     }
+
+    sendFrameSignal();
   }
 
   void start(RunLoop* rl, int fd) {
@@ -252,22 +254,6 @@ static void onServerIO(RunLoop* rl, ev_io* w, int revents) {
   conn0->sendFramebufferInfo();
 }
 
-void onPollTimeout(RunLoop* rl, ev_timer* w, int revents) {
-  // dlog("poll timeout");
-  ev_timer_again(rl, w);
-}
-
-void onFrameTimer(RunLoop* rl, ev_timer* w, int revents) {
-  if (conn0) {
-    if (!conn0->sendFrameSignal()) {
-      // connection closed
-      delete conn0;
-      conn0 = nullptr;
-    }
-  }
-  ev_timer_again(rl, w);
-}
-
 int main(int argc, const char* argv[]) {
   dlog("starting UNIX socket server \"%s\"", sockfile);
   int fd = createUNIXSocketServer(sockfile);
@@ -285,13 +271,6 @@ int main(int argc, const char* argv[]) {
   ev_io server_fd_watcher;
   ev_io_init(&server_fd_watcher, onServerIO, fd, EV_READ);
   ev_io_start(rl, &server_fd_watcher);
-
-  // use a timer to drive client rendering
-  ev_timer frame_timer;
-  ev_init(&frame_timer, onFrameTimer);
-  frame_timer.repeat = 1.0 / 60.0;
-  ev_timer_again(rl, &frame_timer);
-  ev_unref(rl); // don't allow timer to keep runloop alive alone
 
   ev_run(rl, 0);
 
