@@ -79,6 +79,8 @@ wgpu::Adapter requestAdapter(wgpu::Instance instance, wgpu::RequestAdapterOption
             "    deviceID=%u, vendorID=0x%x, BackendType::%s, AdapterType::%s\n",
             p.name, p.driverDescription, p.deviceID, p.vendorID, backendTypeName(p.backendType),
             adapterTypeName(p.adapterType));
+
+    // auto device = userData.adapter.CreateDevice();
   };
 
   // Call to the WebGPU request adapter procedure
@@ -143,82 +145,17 @@ struct Connection {
     device.SetUncapturedErrorCallback(printDeviceError, nullptr);
   }
 
-  void initDawnPipeline() {
-    dawn::utils::ComboRenderPipelineDescriptor desc;
-    desc.vertex.module = dawn::utils::CreateShaderModule(device, R"(
-      let pos : array<vec2<f32>, 3> = array<vec2<f32>, 3>(
-          vec2<f32>( 0.0,  0.5),
-          vec2<f32>(-0.5, -0.5),
-          vec2<f32>( 0.5, -0.5)
-      );
-      [[stage(vertex)]] fn main(
-          [[builtin(vertex_index)]] VertexIndex : u32
-      ) -> [[builtin(position)]] vec4<f32> {
-          return vec4<f32>(pos[VertexIndex], 0.0, 1.0);
-      }
-    )");
-    desc.cFragment.module = dawn::utils::CreateShaderModule(device, R"(
-      [[stage(fragment)]] fn main() -> [[location(0)]] vec4<f32> {
-          return vec4<f32>(1.0, 0.0, 0.7, 1.0);
-      }
-    )");
-    desc.cTargets[0].format = wgpu::TextureFormat::BGRA8Unorm;
-
-    pipeline = device.CreateRenderPipeline(&desc); // global var
-  }
-
   // invoked before starting event loop
   void start(RunLoop* rl, int fd) {
     initDawnWire();
-    initDawnPipeline();
     proto.start(rl, fd);
+    proto.Flush();
   }
-
-  uint32_t fc = 0;
-  bool animate = true;
 
   // runs in response to onFrame callback
   void render_frame() {
-    fc++;
-
-    // ANDRE, render just the first frame
-    if (fc > 1) {
-      return;
-    }
-
-    float RED = 0.4;
-    float GREEN = 0.4;
-    float BLUE = 0.4;
-    if (animate) {
-      RED = std::abs(sinf(float(fc * 10) / 100));
-      GREEN = std::abs(sinf(float(fc * 10) / 90));
-      BLUE = std::abs(cosf(float(fc * 10) / 80));
-    }
-
-    dlog("render frame=%zu animate=%zu, R=%zf G=%zf B=%zf", fc, animate, RED, GREEN, BLUE);
-
-    wgpu::RenderPassColorAttachment colorAttachment;
-    colorAttachment.view = swapchain.GetCurrentTextureView();
-    colorAttachment.clearValue = {RED, GREEN, BLUE, 0.0f};
-    colorAttachment.loadOp = wgpu::LoadOp::Clear;
-    colorAttachment.storeOp = wgpu::StoreOp::Store;
-
-    wgpu::RenderPassDescriptor renderPassDesc;
-    renderPassDesc.colorAttachmentCount = 1;
-    renderPassDesc.colorAttachments = &colorAttachment;
-
-    wgpu::CommandEncoder encoder = device.CreateCommandEncoder();
-    wgpu::RenderPassEncoder pass = encoder.BeginRenderPass(&renderPassDesc);
-    pass.SetPipeline(pipeline);
-    pass.Draw(3);
-    pass.End();
-
-    wgpu::CommandBuffer commands = encoder.Finish();
-    device.GetQueue().Submit(1, &commands);
-
-    swapchain.Present();
-
-    proto.Flush();
+    dlog("render frame()");
+    return;
   }
 };
 
@@ -236,8 +173,9 @@ void runloop_main(int fd) {
   conn.proto.onDawnBuffer = [&](const char* data, size_t len) {
     dlog("onDawnBuffer len=%zu", len);
     assert(conn.wireClient != nullptr);
-    if (conn.wireClient->HandleCommands(data, len) == nullptr)
+    if (conn.wireClient->HandleCommands(data, len) == nullptr) {
       dlog("wireClient->HandleCommands FAILED");
+    }
   };
 
   conn.proto.onFramebufferInfo = [&](const DawnRemoteProtocol::FramebufferInfo& fbinfo) {
@@ -283,8 +221,9 @@ int main(int argc, const char* argv[]) {
     }
     int fd = connectUNIXSocket(sockfile);
     if (fd < 0) {
-      if (errno != ECONNREFUSED && errno != ENOENT)
+      if (errno != ECONNREFUSED && errno != ENOENT) {
         perror("connectUNIXSocket");
+      }
       sleep(1);
       continue;
     }
@@ -294,8 +233,9 @@ int main(int argc, const char* argv[]) {
     runloop_main(fd);
     close(fd);
     t = ev_time() - t;
-    if (t < 1.0)
+    if (t < 1.0) {
       sleep(1);
+    }
   }
   dlog("exit");
   return 0;

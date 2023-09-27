@@ -101,8 +101,6 @@ struct Conn {
         dlog("onSwapchainReservation _wireServer.InjectDevice FAILED");
       }
     }
-
-    sendFrameSignal();
   }
 
   void start(RunLoop* rl, int fd) {
@@ -115,14 +113,7 @@ struct Conn {
     } else {
       dlog("onSwapchainReservation _wireServer.InjectInstance FAILED");
     };
-  }
-
-  bool sendFramebufferInfo() {
-    if (_proto.stopped()) {
-      return false;
-    }
-    dlog("sending framebuffer info to client #%u", this->id);
-    return _proto.sendFramebufferInfo(framebufferInfo);
+    sendFrameSignal();
   }
 
   bool sendFrameSignal() {
@@ -241,7 +232,6 @@ static void onServerIO(RunLoop* rl, ev_io* w, int revents) {
   conn0 = new Conn(connIdGen++);
   dlog("client #%u connected on fd %d", conn0->id, fd);
   conn0->start(rl, fd);
-  conn0->sendFramebufferInfo();
 }
 
 int main(int argc, const char* argv[]) {
