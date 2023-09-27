@@ -88,29 +88,11 @@ struct Conn {
     _proto.onSwapchainReservation = [this](const dawn_wire::ReservedSwapChain& scr) {
       this->onSwapchainReservation(scr);
     };
-
-    // Hardcoded generation and IDs need to match what's produced by the client
-    // or be sent over through the wire.
-    if (_wireServer.InjectInstance(instance->Get(), 1, 0)) {
-      dlog("onSwapchainReservation _wireServer.InjectInstance OK");
-    } else {
-      dlog("onSwapchainReservation _wireServer.InjectInstance FAILED");
-    };
   }
 
   void onSwapchainReservation(const dawn_wire::ReservedSwapChain& scr) {
     dlog("onSwapchainReservation device: %u %u, swapchain %u %u\n", scr.deviceId,
          scr.deviceGeneration, scr.id, scr.generation);
-
-    // // recreate swapchain
-    // wgpu::SwapChainDescriptor desc = {
-    //   .format = framebufferInfo.textureFormat,
-    //   .usage  = framebufferInfo.textureUsage,
-    //   .width  = framebufferInfo.width,
-    //   .height = framebufferInfo.height,
-    //   .presentMode = wgpu::PresentMode::Mailbox,
-    // };
-    // swapchain = device.CreateSwapChain(surface, &desc); // global var
 
     if (_wireServer.GetDevice(scr.deviceId, scr.deviceGeneration) == nullptr) {
       if (_wireServer.InjectDevice(device.Get(), scr.deviceId, scr.deviceGeneration)) {
@@ -125,6 +107,14 @@ struct Conn {
 
   void start(RunLoop* rl, int fd) {
     _proto.start(rl, fd);
+
+    // Hardcoded generation and IDs need to match what's produced by the client
+    // or be sent over through the wire.
+    if (_wireServer.InjectInstance(instance->Get(), 1, 0)) {
+      dlog("onSwapchainReservation _wireServer.InjectInstance OK");
+    } else {
+      dlog("onSwapchainReservation _wireServer.InjectInstance FAILED");
+    };
   }
 
   bool sendFramebufferInfo() {
