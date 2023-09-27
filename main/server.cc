@@ -96,10 +96,11 @@ struct Conn {
 
     // Hardcoded generation and IDs need to match what's produced by the client
     // or be sent over through the wire.
-    //_wireServer.InjectDevice(device.Get(), 1, 0);
-    //_wireServer.InjectSwapChain(swapchain.Get(), 1, 0, 1, 0);
-    // kangz: Maybe we should inject the surface instead and just let the client
-    // create its swapchain??
+    if (_wireServer.InjectInstance(instance->Get(), 1, 0)) {
+      dlog("onSwapchainReservation _wireServer.InjectInstance OK");
+    } else {
+      dlog("onSwapchainReservation _wireServer.InjectInstance FAILED");
+    };
   }
 
   void onSwapchainReservation(const dawn_wire::ReservedSwapChain& scr) {
@@ -115,12 +116,6 @@ struct Conn {
     //   .presentMode = wgpu::PresentMode::Mailbox,
     // };
     // swapchain = device.CreateSwapChain(surface, &desc); // global var
-
-    if (_wireServer.InjectInstance(instance->Get(), scr.id, scr.generation)) {
-      dlog("onSwapchainReservation _wireServer.InjectInstance OK");
-    } else {
-      dlog("onSwapchainReservation _wireServer.InjectInstance FAILED");
-    };
 
     if (_wireServer.GetDevice(scr.deviceId, scr.deviceGeneration) == nullptr) {
       if (_wireServer.InjectDevice(device.Get(), scr.deviceId, scr.deviceGeneration)) {
@@ -360,17 +355,7 @@ int main(int argc, const char* argv[]) {
   ev_timer_again(rl, &frame_timer);
   ev_unref(rl); // don't allow timer to keep runloop alive alone
 
-  // use a timer to drive the runloop so we can call glfwPollEvents often enough
-  // ev_timer timer;
-  // ev_init(&timer, onPollTimeout);
-  // timer.repeat = 1.0 / 60.0;
-  // ev_timer_again(rl, &timer);
-  // ev_unref(rl); // don't allow timer to keep runloop alive alone
-
-  while (!glfwWindowShouldClose(window)) {
-    glfwPollEvents();       // check for OS events
-    ev_run(rl, EVRUN_ONCE); // poll for I/O events
-  }
+  ev_run(rl, 0);
 
   dlog("exit");
   if (conn0) {
@@ -378,7 +363,6 @@ int main(int argc, const char* argv[]) {
   }
 
   ev_io_stop(rl, &server_fd_watcher);
-  // ev_timer_stop(rl, &timer);
   close(fd);
   unlink(sockfile);
   return 0;

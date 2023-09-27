@@ -109,8 +109,9 @@ bool DawnRemoteProtocol::sendFrameSignal() {
     trace("not enough buffer space in _wbuf");
     return false;
   }
-  if (_wbuf.writec(MSGT_FRAME_SIGNAL) != 1)
+  if (_wbuf.writec(MSGT_FRAME_SIGNAL) != 1) {
     return false;
+  }
   setNeedsWriteFlush();
   return true;
 }
@@ -142,8 +143,9 @@ bool DawnRemoteProtocol::sendReservation(const dawn_wire::ReservedSwapChain& scr
 bool DawnRemoteProtocol::maybeReadIncomingDawnCmd() {
   assert(_dawnCmdRLen > 0);
   assert(_dawnCmdRLen <= DAWNCMD_MAX);
-  if (_rbuf.len() < _dawnCmdRLen)
+  if (_rbuf.len() < _dawnCmdRLen) {
     return false;
+  }
 
   // onDawnBuffer expects a contiguous memory segment; attempt to simply reference
   // the data in rbuf. takeRef returns null if the data is not available as a contiguous
@@ -235,8 +237,9 @@ void DawnRemoteProtocol::doIO(int revents) {
     ssize_t n = _rbuf.readFromFD(_io.fd, _rbuf.cap()) > 0;
     if (n <= 0) {
       if (n < 0) {
-        if (errno == EAGAIN)
+        if (errno == EAGAIN) {
           return;
+        }
         perror("read");
       }
       trace("EOF");
@@ -248,8 +251,9 @@ void DawnRemoteProtocol::doIO(int revents) {
       trace("maybeReadIncomingDawnCmd");
       maybeReadIncomingDawnCmd();
     } else {
-      if (!readMsg())
+      if (!readMsg()) {
         return;
+      }
     }
   }
 
@@ -262,8 +266,9 @@ void DawnRemoteProtocol::doIO(int revents) {
       trace("_dawnout flush [offs=%u, len=%u]", _dawnout.flushoffs, len);
       ssize_t n = ::write(_io.fd, &_dawnout.flushbuf[_dawnout.flushoffs], len);
       if (n < 1) {
-        if (n < 0 && errno != EAGAIN)
+        if (n < 0 && errno != EAGAIN) {
           perror("write");
+        }
         return;
       }
       _dawnout.flushoffs += (uint32_t)n;
@@ -361,8 +366,9 @@ bool DawnRemoteProtocol::Flush() {
     { // log buffer
       char* buf = (char*)malloc(_dawnout.writelen * 5);
       ssize_t n = debugFmtBytes(buf, _dawnout.writelen * 5, _dawnout.writebuf, _dawnout.writelen);
-      if (n != -1)
+      if (n != -1) {
         trace("data to be sent out: %u\n\"%s\"", _dawnout.writelen, buf);
+      }
       free(buf);
     }
 #endif /* DEBUG_TRACE_PROTOCOL */
@@ -384,25 +390,3 @@ bool DawnRemoteProtocol::Flush() {
   }
   return true;
 }
-
-// bool DawnRemoteProtocol::sendDawnCommands(const char* src, size_t nbyte) {
-//   size_t needbytes = nbyte + DAWNCMD_MSG_HEADER_SIZE;
-//   // proto buffer must be at least the size of the dawn command buffer + header
-//   // to be able to succeed at all.
-//   assert(_wbuf.cap() >= needbytes);
-//   // if there's no room, ask the caller to try again later
-//   if (_wbuf.avail() < needbytes) {
-//     trace("not enough buffer space for dawn command buffer");
-//     return false;
-//   }
-//   // write header: "D" <HEXBYTE>{8}
-//   assert(nbyte <= 0xFFFFFFFF);
-//   char buf[DAWNCMD_MSG_HEADER_SIZE];
-//   encodeDawnCmdHeader(buf, (uint32_t)nbyte);
-//   _wbuf.write(buf, DAWNCMD_MSG_HEADER_SIZE);
-//   // not checking result from _wbuf.write as we already checked _wbuf.avail()
-//   size_t n = _wbuf.write(src, nbyte);
-//   assert(n == nbyte);
-//   setNeedsWriteFlush();
-//   return true;
-// }
