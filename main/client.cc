@@ -104,8 +104,6 @@ struct Connection {
 
   dawn_wire::WireClient* wireClient = nullptr;
   wgpu::Device device;
-  wgpu::SwapChain swapchain;
-  wgpu::RenderPipeline pipeline;
   wgpu::Instance instance;
 
   dawn_wire::ReservedInstance instanceReservation;
@@ -115,9 +113,8 @@ struct Connection {
   ~Connection() {
     // prevent double free by releasing refs to things that the wireClient owns
     if (wireClient) {
-      pipeline.Release();
       device.Release();
-      swapchain.Release();
+      instance.Release();
       delete wireClient;
     }
   }
@@ -179,31 +176,7 @@ void runloop_main(int fd) {
   };
 
   conn.proto.onFramebufferInfo = [&](const DawnRemoteProtocol::FramebufferInfo& fbinfo) {
-    double dpscale = (double)fbinfo.dpscale / 1000.0;
-    dlog("onFramebufferInfo %ux%u@%.2f", fbinfo.width, fbinfo.height, dpscale);
-
-#define ENABLE_FBINFO_WORKAROUND_RESTART
-#ifdef ENABLE_FBINFO_WORKAROUND_RESTART
-    // XXX FIXME
-    // This is a terrible and temporary fix util we can figure out how to
-    // make Dawn sync and update its swapchain resevation and/or wire client
-    // & server, etc. Whenever the server framebuffer changes, drop this
-    // connection and restart the client with a new connection.
-    if (conn.swapchain) {
-      conn.proto.stop();
-      return;
-    }
-#endif
-
-    // [WORK IN PROGRESS] replace/update swapchain
-    dlog("reserving new swapchain");
-    if (conn.swapchain) {
-      conn.wireClient->ReclaimSwapChainReservation(conn.swapchainReservation);
-    }
-    conn.swapchainReservation = conn.wireClient->ReserveSwapChain(conn.device.Get());
-    conn.swapchain = wgpu::SwapChain::Acquire(conn.swapchainReservation.swapchain);
-    dlog("sending swapchain reservation to server");
-    conn.proto.sendReservation(conn.swapchainReservation);
+    dlog("onFramebufferInfo %ux%u", fbinfo.width, fbinfo.height);
   };
 
   conn.start(rl, fd);
