@@ -17,13 +17,10 @@
 #include "common.hh"
 #include "protocol.hh"
 
-#include "GLFW/glfw3.h"
-
 #include <dawn/dawn_proc.h>
 #include <dawn/native/DawnNative.h>
 #include <dawn/webgpu_cpp.h>
 #include <dawn/wire/WireServer.h>
-#include <webgpu/webgpu_glfw.h>
 
 #include <algorithm>
 #include <cmath>
@@ -53,14 +50,12 @@ int createUNIXSocketServer(const char* filename) {
 }
 
 const char* sockfile = SERVER_SOCK;
-static GLFWwindow* window = nullptr;
 static std::unique_ptr<dawn_native::Instance> instance;
 
 DawnProcTable nativeProcs;
 dawn_native::Adapter backendAdapter;
 wgpu::Device device;
 wgpu::Surface surface;
-wgpu::SwapChain swapchain;
 
 DawnRemoteProtocol::FramebufferInfo framebufferInfo = {
     .dpscale = 1000, // 1000=100%
@@ -124,13 +119,6 @@ struct Conn {
         dlog("onSwapchainReservation _wireServer.InjectDevice FAILED");
       }
     }
-
-    if (_wireServer.InjectSwapChain(swapchain.Get(), scr.id, scr.generation, scr.deviceId,
-                                    scr.deviceGeneration)) {
-      dlog("onSwapchainReservation _wireServer.InjectSwapChain OK");
-    } else {
-      dlog("onSwapchainReservation _wireServer.InjectSwapChain FAILED");
-    }
   }
 
   void start(RunLoop* rl, int fd) {
@@ -191,10 +179,6 @@ static wgpu::BackendType backendType = wgpu::BackendType::OpenGL;
 #error
 #endif
 
-static void PrintGLFWError(int code, const char* message) {
-  std::cerr << "GLFW error: " << code << " - " << message << std::endl;
-}
-
 // logAvailableAdapters prints a list of all adapters and their properties
 void logAvailableAdapters(dawn_native::Instance* instance) {
   fprintf(stderr, "Available adapters:\n");
@@ -207,38 +191,6 @@ void logAvailableAdapters(dawn_native::Instance* instance) {
             p.name, p.driverDescription, p.deviceID, p.vendorID, backendTypeName(p.backendType),
             adapterTypeName(p.adapterType));
   }
-}
-
-// updates values of the global variable framebufferInfo
-void updateFramebufferInfo(uint32_t width, uint32_t height) {
-  framebufferInfo.width = width;
-  framebufferInfo.height = height;
-  float xscale, yscale;
-  glfwGetWindowContentScale(window, &xscale, &yscale);
-  framebufferInfo.dpscale = (uint16_t)std::min((double)0xFFFF, (double)xscale * 1000.0);
-}
-
-void createOSWindow() {
-  assert(window == nullptr);
-
-  glfwSetErrorCallback(PrintGLFWError);
-  if (!glfwInit()) {
-    return;
-  }
-
-  // Setup the correct hints for GLFW for backends.
-  glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW_FALSE);
-  window = glfwCreateWindow(framebufferInfo.width, framebufferInfo.height, "hello-wire",
-                            /*monitor*/ nullptr, nullptr);
-
-  if (!window) {
-    return;
-  }
-
-  // get actual framebuffer size
-  int width, height;
-  glfwGetFramebufferSize(window, &width, &height);
-  updateFramebufferInfo((uint32_t)width, (uint32_t)height);
 }
 
 void createDawnDevice() {
@@ -274,18 +226,6 @@ void createDawnDevice() {
 
   // hook up error reporting
   device.SetUncapturedErrorCallback(printDeviceError, nullptr);
-}
-
-void createDawnSwapChain() {
-  surface = wgpu::glfw::CreateSurfaceForWindow(instance->Get(), window); // global var
-  wgpu::SwapChainDescriptor desc = {
-      .format = framebufferInfo.textureFormat,
-      .usage = framebufferInfo.textureUsage,
-      .width = framebufferInfo.width,
-      .height = framebufferInfo.height,
-      .presentMode = wgpu::PresentMode::Mailbox,
-  };
-  swapchain = device.CreateSwapChain(surface, &desc); // global var
 }
 
 // onServerIO is called when a new connection is awaiting accept
@@ -336,9 +276,7 @@ int main(int argc, const char* argv[]) {
     return 1;
   }
 
-  createOSWindow();
   createDawnDevice();
-  createDawnSwapChain();
 
   RunLoop* rl = EV_DEFAULT;
 

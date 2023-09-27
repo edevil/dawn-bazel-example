@@ -286,8 +286,6 @@ DAWN_HDRS = [
     "include/dawn/wire/dawn_wire_export.h",
     "include/webgpu/webgpu.h",
     "include/webgpu/webgpu_cpp.h",
-    # TODO: remove
-    "include/webgpu/webgpu_glfw.h",
 ]
 
 DAWN_COMMON_SRCS = [

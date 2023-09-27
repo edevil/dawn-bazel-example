@@ -131,15 +131,3 @@ http_archive(
     strip_prefix = "libev-4.33",
     urls = ["http://dist.schmorp.de/libev/Attic/libev-4.33.tar.gz"],
 )
-
-# ===== glfw =====
-
-GLFW_VERSION = "3.3.5"
-
-http_archive(
-    name = "glfw",
-    build_file = "@//:BUILD.glfw",
-    sha256 = "a89bb6074bc12bc12fcd322dcf848af81b679ccdc695f70b29ca8a9aa066684b",
-    strip_prefix = "glfw-{}".format(GLFW_VERSION),
-    urls = ["https://github.com/glfw/glfw/archive/{}.zip".format(GLFW_VERSION)],
-)
