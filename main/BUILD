@@ -45,7 +45,6 @@ cc_binary(
         "//deps/libev",
         "@dawn//:dawn_cpp",
         "@dawn//:dawn_proc",
-        "@dawn//:dawn_utils",
         "@dawn//:dawn_wire",
     ],
 )

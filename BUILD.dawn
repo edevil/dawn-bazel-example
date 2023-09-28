@@ -934,41 +934,6 @@ cc_library(
 )
 
 cc_library(
-    name = "dawn_utils",
-    srcs = [
-        # From dawn/src/dawn/utils/BUILD.gn
-        "src/dawn/utils/ComboRenderBundleEncoderDescriptor.cpp",
-        "src/dawn/utils/ComboRenderBundleEncoderDescriptor.h",
-        "src/dawn/utils/ComboRenderPipelineDescriptor.cpp",
-        "src/dawn/utils/ComboRenderPipelineDescriptor.h",
-        "src/dawn/utils/PlatformDebugLogger.h",
-        "src/dawn/utils/ScopedAutoreleasePool.h",
-        "src/dawn/utils/SystemUtils.cpp",
-        "src/dawn/utils/SystemUtils.h",
-        "src/dawn/utils/TerribleCommandBuffer.cpp",
-        "src/dawn/utils/TerribleCommandBuffer.h",
-        "src/dawn/utils/TestUtils.cpp",
-        "src/dawn/utils/TestUtils.h",
-        "src/dawn/utils/TextureUtils.cpp",
-        "src/dawn/utils/TextureUtils.h",
-        "src/dawn/utils/Timer.h",
-        "src/dawn/utils/WGPUHelpers.cpp",
-        "src/dawn/utils/WGPUHelpers.h",
-        "src/dawn/utils/WireHelper.cpp",
-        "src/dawn/utils/WireHelper.h",
-    ],
-    hdrs = DAWN_HDRS,
-    includes = [
-        "include",
-        "src",
-    ],
-    visibility = ["//visibility:public"],
-    deps = [
-        ":dawn_wire",
-    ],
-)
-
-cc_library(
     name = "dawn_wire",
     srcs = DAWN_COMMON_SRCS + [
         # Generated files

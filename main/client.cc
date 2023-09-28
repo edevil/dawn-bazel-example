@@ -19,12 +19,9 @@
 
 #include <dawn/common/Assert.h>
 #include <dawn/dawn_proc.h>
-#include <dawn/utils/ComboRenderPipelineDescriptor.h>
-#include <dawn/utils/WGPUHelpers.h>
 #include <dawn/webgpu.h>
 #include <dawn/wire/WireClient.h>
 
-#include <cmath>
 #include <iostream>
 
 #include <unistd.h> // pipe
@@ -50,6 +47,8 @@ wgpu::Adapter requestAdapter(wgpu::Instance instance, wgpu::RequestAdapterOption
     wgpu::Adapter adapter = nullptr;
     bool requestEnded = false;
   };
+
+  // TODO: this should be allocated in the heap, since in the callback it is out of scope
   UserData userData;
 
   // Callback called by wgpuInstanceRequestAdapter when the request returns
@@ -148,12 +147,6 @@ struct Connection {
     proto.start(rl, fd);
     proto.Flush();
   }
-
-  // runs in response to onFrame callback
-  void render_frame() {
-    dlog("render frame()");
-    return;
-  }
 };
 
 // called by main function. Sets up Connection object, proto callbacks
@@ -165,7 +158,10 @@ void runloop_main(int fd) {
 
   Connection conn;
 
-  conn.proto.onFrame = [&]() { conn.render_frame(); };
+  conn.proto.onFrame = [&]() {
+    dlog("render frame()");
+    return;
+  };
 
   conn.proto.onDawnBuffer = [&](const char* data, size_t len) {
     dlog("onDawnBuffer len=%zu", len);

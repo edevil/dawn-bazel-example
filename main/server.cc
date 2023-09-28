@@ -113,21 +113,6 @@ struct Conn {
     } else {
       dlog("onSwapchainReservation _wireServer.InjectInstance FAILED");
     };
-    sendFrameSignal();
-  }
-
-  bool sendFrameSignal() {
-    if (_proto.stopped()) {
-      close();
-      return false;
-    }
-    // send FRAME message to client
-    if (!_proto.sendFrameSignal()) {
-      dlog("_proto.sendFrameSignal FAILED");
-      close();
-      return false;
-    }
-    return true;
   }
 
   void close();
