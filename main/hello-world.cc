@@ -51,6 +51,34 @@ wgpu::Adapter requestAdapter(wgpu::Instance instance, wgpu::RequestAdapterOption
   return userData.adapter;
 }
 
+wgpu::Device requestDevice(wgpu::Adapter adapter, wgpu::DeviceDescriptor const* options) {
+  // A simple structure holding the local information shared with the
+  // onAdapterRequestEnded callback.
+  struct UserData {
+    wgpu::Device device = nullptr;
+    bool requestEnded = false;
+  };
+  UserData userData;
+
+  wgpu::RequestDeviceCallback onDeviceRequestEnded =
+      [](WGPURequestDeviceStatus status, WGPUDevice device, char const* message, void* pUserData) {
+        UserData& userData = *reinterpret_cast<UserData*>(pUserData);
+        if ((wgpu::RequestDeviceStatus)status == wgpu::RequestDeviceStatus::Success) {
+          userData.device = (wgpu::Device)device;
+        } else {
+          std::cout << "Could not get WebGPU device: " << message << std::endl;
+        }
+        userData.requestEnded = true;
+      };
+
+  // Call to the WebGPU request device procedure
+  adapter.RequestDevice(options, onDeviceRequestEnded, (void*)&userData);
+
+  assert(userData.requestEnded);
+
+  return userData.device;
+}
+
 /**
  * An example of how we can inspect the capabilities of the hardware through
  * the adapter object.
@@ -155,6 +183,13 @@ int main(int argc, char** argv) {
   }
 
   inspectAdapter(adapter);
+
+  wgpu::DeviceDescriptor opts = {};
+  opts.nextInChain = nullptr;
+  wgpu::Device device = requestDevice(adapter, &opts);
+
+  auto numFeatures = device.EnumerateFeatures(nullptr);
+  std::cout << "Number of device features: " << numFeatures << std::endl;
 
   return 0;
 }

@@ -71,6 +71,19 @@ wgpu::Adapter requestAdapter(wgpu::Instance instance, wgpu::RequestAdapterOption
       std::cout << "Could not get WebGPU adapter: " << message << std::endl;
     }
     dlog("got webgpu adapter");
+    size_t count = wAdapter.EnumerateFeatures(nullptr);
+    dlog("adapter number of features: %lu", count);
+    std::vector<wgpu::FeatureName> features(count);
+    if (count > 0) {
+      wAdapter.EnumerateFeatures(features.data());
+    }
+
+    for (auto f : features) {
+      auto fname = getFeatureName(f);
+      if (fname) {
+        dlog("Got a feature: %s", fname->c_str());
+      }
+    }
 
     wgpu::AdapterProperties p;
     wAdapter.GetProperties(&p);
@@ -92,15 +105,6 @@ wgpu::Adapter requestAdapter(wgpu::Instance instance, wgpu::RequestAdapterOption
           device.SetUncapturedErrorCallback(printDeviceError, nullptr);
           size_t count = device.EnumerateFeatures(nullptr);
           dlog("device number of features: %lu", count);
-          std::vector<wgpu::FeatureName> features(count);
-          device.EnumerateFeatures(&features[0]);
-
-          for (auto f : features) {
-            auto fname = getFeatureName(f);
-            if (fname) {
-              dlog("Got a feature: %s", fname->c_str());
-            }
-          }
         },
         (void*)&proto);
     proto.Flush();

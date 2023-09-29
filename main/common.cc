@@ -1,5 +1,6 @@
 #include "common.hh"
 #include <ev.h>
+#include <optional>
 
 const char* tmptimestamp() {
   time_t now = time(NULL);
@@ -97,30 +98,30 @@ void printDeviceError(WGPUErrorType errorType, const char* message, void*) {
 std::optional<std::string> getFeatureName(wgpu::FeatureName& feature) {
   switch (feature) {
   case wgpu::FeatureName::DepthClipControl:
-    return "depth-clip-control";
+    return std::optional<std::string>{"depth-clip-control"};
   case wgpu::FeatureName::Depth32FloatStencil8:
-    return "depth32float-stencil8";
+    return std::optional<std::string>{"depth32float-stencil8"};
   case wgpu::FeatureName::TextureCompressionBC:
-    return "texture-compression-bc";
+    return std::optional<std::string>{"texture-compression-bc"};
   case wgpu::FeatureName::TextureCompressionETC2:
-    return "texture-compression-etc2";
+    return std::optional<std::string>{"texture-compression-etc2"};
   case wgpu::FeatureName::TextureCompressionASTC:
-    return "texture-compression-astc";
+    return std::optional<std::string>{"texture-compression-astc"};
   case wgpu::FeatureName::TimestampQuery:
-    return "timestamp-query";
+    return std::optional<std::string>{"timestamp-query"};
   case wgpu::FeatureName::IndirectFirstInstance:
-    return "indirect-first-instance";
+    return std::optional<std::string>{"indirect-first-instance"};
   case wgpu::FeatureName::ShaderF16:
-    return "shader-f16";
+    return std::optional<std::string>{"shader-f16"};
   case wgpu::FeatureName::RG11B10UfloatRenderable:
-    return "rg11b10ufloat-renderable";
+    return std::optional<std::string>{"rg11b10ufloat-renderable"};
   case wgpu::FeatureName::BGRA8UnormStorage:
-    return "bgra8unorm-storage";
+    return std::optional<std::string>{"bgra8unorm-storage"};
   case wgpu::FeatureName::Float32Filterable:
-    return "float32-filterable";
+    return std::optional<std::string>{"float32-filterable"};
   default:
     break;
   }
 
-  return nullptr;
+  return std::nullopt;
 }
