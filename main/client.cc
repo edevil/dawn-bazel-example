@@ -26,6 +26,24 @@
 
 #include <unistd.h> // pipe
 
+std::string cWGSL = R"(`
+
+@group(0) @binding(0) var<storage,read> inputBuffer: array<f32,64>;
+@group(0) @binding(1) var<storage,read_write> outputBuffer: array<f32,64>;
+
+// The function to evaluate for each element of the processed buffer
+fn f(x: f32) -> f32 {
+    return 2.0 * x + 1.0;
+}
+
+@compute @workgroup_size(32)
+fn computeStuff(@builtin(global_invocation_id) id: vec3<u32>) {
+    // Apply the function f to the buffer element at index id.x:
+    outputBuffer[id.x] = f(inputBuffer[id.x]);
+}
+
+)";
+
 int connectUNIXSocket(const char* filename) {
   /*struct*/ sockaddr_un addr;
   int fd = createUNIXSocket(filename, &addr);
@@ -105,6 +123,144 @@ wgpu::Adapter requestAdapter(wgpu::Instance instance, wgpu::RequestAdapterOption
           device.SetUncapturedErrorCallback(printDeviceError, nullptr);
           size_t count = device.EnumerateFeatures(nullptr);
           dlog("device number of features: %lu", count);
+
+          // setup compute
+          auto m_bufferSize = 64 * sizeof(float);
+
+          // Create bind group layout
+          std::vector<wgpu::BindGroupLayoutEntry> bindings(2);
+
+          // Input buffer
+          bindings[0].binding = 0;
+          bindings[0].buffer.type = wgpu::BufferBindingType::ReadOnlyStorage;
+          bindings[0].visibility = wgpu::ShaderStage::Compute;
+
+          // Output buffer
+          bindings[1].binding = 1;
+          bindings[1].buffer.type = wgpu::BufferBindingType::Storage;
+          bindings[1].visibility = wgpu::ShaderStage::Compute;
+
+          wgpu::BindGroupLayoutDescriptor bindGroupLayoutDesc;
+          bindGroupLayoutDesc.entryCount = (uint32_t)bindings.size();
+          bindGroupLayoutDesc.entries = bindings.data();
+          auto m_bindGroupLayout = device.CreateBindGroupLayout(&bindGroupLayoutDesc);
+
+          // Load compute shader
+          wgpu::ShaderModuleWGSLDescriptor shaderCodeDesc{};
+          shaderCodeDesc.nextInChain = nullptr;
+          shaderCodeDesc.sType = wgpu::SType::ShaderModuleWGSLDescriptor;
+          wgpu::ShaderModuleDescriptor shaderDesc{};
+          shaderDesc.nextInChain = &shaderCodeDesc;
+          shaderCodeDesc.code = cWGSL.c_str();
+
+          wgpu::ShaderModule computeShaderModule = device.CreateShaderModule(&shaderDesc);
+
+          // Create compute pipeline layout
+          wgpu::PipelineLayoutDescriptor pipelineLayoutDesc;
+          pipelineLayoutDesc.bindGroupLayoutCount = 1;
+          pipelineLayoutDesc.bindGroupLayouts = &m_bindGroupLayout;
+          auto m_pipelineLayout = device.CreatePipelineLayout(&pipelineLayoutDesc);
+
+          // Create compute pipeline
+          wgpu::ComputePipelineDescriptor computePipelineDesc;
+          computePipelineDesc.compute.constantCount = 0;
+          computePipelineDesc.compute.constants = nullptr;
+          computePipelineDesc.compute.entryPoint = "computeStuff";
+          computePipelineDesc.compute.module = computeShaderModule;
+          computePipelineDesc.layout = m_pipelineLayout;
+          auto m_pipeline = device.CreateComputePipeline(&computePipelineDesc);
+
+          // Create input/output buffers
+          wgpu::BufferDescriptor bufferDesc;
+          bufferDesc.mappedAtCreation = false;
+          bufferDesc.size = m_bufferSize;
+
+          bufferDesc.usage = wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst;
+          auto m_inputBuffer = device.CreateBuffer(&bufferDesc);
+
+          bufferDesc.usage = wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopySrc;
+          auto m_outputBuffer = device.CreateBuffer(&bufferDesc);
+
+          // Create an intermediary buffer to which we copy the output and that can be
+          // used for reading into the CPU memory.
+          bufferDesc.usage = wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::MapRead;
+          auto m_mapBuffer = device.CreateBuffer(&bufferDesc);
+
+          // Create compute bind group
+          std::vector<wgpu::BindGroupEntry> entries(2);
+
+          // Input buffer
+          entries[0].binding = 0;
+          entries[0].buffer = m_inputBuffer;
+          entries[0].offset = 0;
+          entries[0].size = m_bufferSize;
+
+          // Output buffer
+          entries[1].binding = 1;
+          entries[1].buffer = m_outputBuffer;
+          entries[1].offset = 0;
+          entries[1].size = m_bufferSize;
+
+          wgpu::BindGroupDescriptor bindGroupDesc;
+          bindGroupDesc.layout = m_bindGroupLayout;
+          bindGroupDesc.entryCount = (uint32_t)entries.size();
+          bindGroupDesc.entries = entries.data();
+          auto m_bindGroup = device.CreateBindGroup(&bindGroupDesc);
+
+          // OnCompute
+          auto queue = device.GetQueue();
+          std::vector<float> input(m_bufferSize / sizeof(float));
+          for (int i = 0; i < input.size(); ++i) {
+            input[i] = 0.1f * i;
+          }
+          queue.WriteBuffer(m_inputBuffer, 0, input.data(), input.size() * sizeof(float));
+
+          // Initialize a command encoder
+          wgpu::CommandEncoderDescriptor encoderDesc = {};
+          wgpu::CommandEncoder encoder = device.CreateCommandEncoder(&encoderDesc);
+
+          // Create compute pass
+          wgpu::ComputePassDescriptor computePassDesc;
+          computePassDesc.timestampWriteCount = 0;
+          computePassDesc.timestampWrites = nullptr;
+          wgpu::ComputePassEncoder computePass = encoder.BeginComputePass(&computePassDesc);
+
+          // Use compute pass
+          computePass.SetPipeline(m_pipeline);
+          computePass.SetBindGroup(0, m_bindGroup, 0, nullptr);
+
+          uint32_t invocationCount = m_bufferSize / sizeof(float);
+          uint32_t workgroupSize = 32;
+          // This ceils invocationCount / workgroupSize
+          uint32_t workgroupCount = (invocationCount + workgroupSize - 1) / workgroupSize;
+          computePass.DispatchWorkgroups(workgroupCount, 1, 1);
+
+          // Finalize compute pass
+          computePass.End();
+
+          // Before encoder.finish
+          encoder.CopyBufferToBuffer(m_outputBuffer, 0, m_mapBuffer, 0, m_bufferSize);
+
+          // Encode and submit the GPU commands
+          wgpu::CommandBufferDescriptor cmdDesc{};
+          wgpu::CommandBuffer commands = encoder.Finish(&cmdDesc);
+          queue.Submit(1, &commands);
+
+          // Print output
+          // TODO, pass in custom data structure to callback since we can't capture anything
+          m_mapBuffer.MapAsync(
+              wgpu::MapMode::Read, 0, m_bufferSize,
+              [](WGPUBufferMapAsyncStatus status, void*) {
+                if (status == WGPUBufferMapAsyncStatus_Success) {
+                  const float* output =
+                      (const float*)m_mapBuffer.GetConstMappedRange(0, m_bufferSize);
+                  for (int i = 0; i < input.size(); ++i) {
+                    std::cout << "input " << input[i] << " became " << output[i] << std::endl;
+                  }
+                  m_mapBuffer.Unmap();
+                }
+              },
+              nullptr);
         },
         (void*)&proto);
     proto.Flush();
