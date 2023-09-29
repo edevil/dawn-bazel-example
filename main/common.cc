@@ -93,3 +93,34 @@ void printDeviceError(WGPUErrorType errorType, const char* message, void*) {
   }
   std::cerr << "device error: " << errorTypeName << " error: " << message << std::endl;
 }
+
+std::optional<std::string> getFeatureName(wgpu::FeatureName& feature) {
+  switch (feature) {
+  case wgpu::FeatureName::DepthClipControl:
+    return "depth-clip-control";
+  case wgpu::FeatureName::Depth32FloatStencil8:
+    return "depth32float-stencil8";
+  case wgpu::FeatureName::TextureCompressionBC:
+    return "texture-compression-bc";
+  case wgpu::FeatureName::TextureCompressionETC2:
+    return "texture-compression-etc2";
+  case wgpu::FeatureName::TextureCompressionASTC:
+    return "texture-compression-astc";
+  case wgpu::FeatureName::TimestampQuery:
+    return "timestamp-query";
+  case wgpu::FeatureName::IndirectFirstInstance:
+    return "indirect-first-instance";
+  case wgpu::FeatureName::ShaderF16:
+    return "shader-f16";
+  case wgpu::FeatureName::RG11B10UfloatRenderable:
+    return "rg11b10ufloat-renderable";
+  case wgpu::FeatureName::BGRA8UnormStorage:
+    return "bgra8unorm-storage";
+  case wgpu::FeatureName::Float32Filterable:
+    return "float32-filterable";
+  default:
+    break;
+  }
+
+  return nullptr;
+}

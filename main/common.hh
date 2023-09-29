@@ -39,3 +39,4 @@ int createUNIXSocket(const char* filename, sockaddr_un* addr);
 const char* backendTypeName(wgpu::BackendType t);
 const char* adapterTypeName(wgpu::AdapterType t);
 void printDeviceError(WGPUErrorType errorType, const char* message, void*);
+std::optional<std::string> getFeatureName(wgpu::FeatureName& feature);

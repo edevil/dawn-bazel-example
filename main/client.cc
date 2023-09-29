@@ -40,7 +40,8 @@ int connectUNIXSocket(const char* filename) {
   return fd;
 }
 
-wgpu::Adapter requestAdapter(wgpu::Instance instance, wgpu::RequestAdapterOptions const* options) {
+wgpu::Adapter requestAdapter(wgpu::Instance instance, wgpu::RequestAdapterOptions const* options,
+                             DawnRemoteProtocol& proto) {
   // A simple structure holding the local information shared with the
   // onAdapterRequestEnded callback.
   struct UserData {
@@ -62,28 +63,52 @@ wgpu::Adapter requestAdapter(wgpu::Instance instance, wgpu::RequestAdapterOption
   wgpu::RequestAdapterCallback onAdapterRequestEnded = [](WGPURequestAdapterStatus status,
                                                           WGPUAdapter adapter, char const* message,
                                                           void* pUserData) {
-    UserData& userData = *reinterpret_cast<UserData*>(pUserData);
+    DawnRemoteProtocol& proto = *reinterpret_cast<DawnRemoteProtocol*>(pUserData);
+    wgpu::Adapter wAdapter;
     if ((wgpu::RequestAdapterStatus)status == wgpu::RequestAdapterStatus::Success) {
-      userData.adapter = (wgpu::Adapter)adapter;
+      wAdapter = (wgpu::Adapter)adapter;
     } else {
       std::cout << "Could not get WebGPU adapter: " << message << std::endl;
     }
-    userData.requestEnded = true;
     dlog("got webgpu adapter");
 
     wgpu::AdapterProperties p;
-    userData.adapter.GetProperties(&p);
+    wAdapter.GetProperties(&p);
     fprintf(stderr,
             "  %s (%s)\n"
             "    deviceID=%u, vendorID=0x%x, BackendType::%s, AdapterType::%s\n",
             p.name, p.driverDescription, p.deviceID, p.vendorID, backendTypeName(p.backendType),
             adapterTypeName(p.adapterType));
 
-    // auto device = userData.adapter.CreateDevice();
+    wgpu::DeviceDescriptor desc{};
+    wAdapter.RequestDevice(
+        &desc,
+        [](WGPURequestDeviceStatus status, WGPUDevice cDevice, const char* message,
+           void* pUserData) {
+          assert(status == WGPURequestDeviceStatus_Success);
+
+          dlog("got webgpu device");
+          auto device = wgpu::Device::Acquire(cDevice);
+          device.SetUncapturedErrorCallback(printDeviceError, nullptr);
+          size_t count = device.EnumerateFeatures(nullptr);
+          dlog("device number of features: %lu", count);
+          std::vector<wgpu::FeatureName> features(count);
+          device.EnumerateFeatures(&features[0]);
+
+          for (auto f : features) {
+            auto fname = getFeatureName(f);
+            if (fname) {
+              dlog("Got a feature: %s", fname->c_str());
+            }
+          }
+        },
+        (void*)&proto);
+    proto.Flush();
   };
 
   // Call to the WebGPU request adapter procedure
-  instance.RequestAdapter(options, onAdapterRequestEnded, (void*)&userData);
+  instance.RequestAdapter(options, onAdapterRequestEnded, (void*)&proto);
+  proto.Flush();
 
   // In theory we should wait until onAdapterReady has been called, which
   // could take some time (what the 'await' keyword does in the JavaScript
@@ -106,8 +131,6 @@ struct Connection {
   wgpu::Instance instance;
 
   dawn_wire::ReservedInstance instanceReservation;
-  dawn_wire::ReservedDevice deviceReservation;
-  dawn_wire::ReservedSwapChain swapchainReservation;
 
   ~Connection() {
     // prevent double free by releasing refs to things that the wireClient owns
@@ -134,18 +157,13 @@ struct Connection {
 
     wgpu::RequestAdapterOptions adapterOpts = {};
     adapterOpts.nextInChain = nullptr;
-    auto adapter = requestAdapter(instance, &adapterOpts);
-
-    deviceReservation = wireClient->ReserveDevice();
-    device = wgpu::Device::Acquire(deviceReservation.device); // global var
-    device.SetUncapturedErrorCallback(printDeviceError, nullptr);
+    auto adapter = requestAdapter(instance, &adapterOpts, proto);
   }
 
   // invoked before starting event loop
   void start(RunLoop* rl, int fd) {
-    initDawnWire();
     proto.start(rl, fd);
-    proto.Flush();
+    initDawnWire();
   }
 };
 
