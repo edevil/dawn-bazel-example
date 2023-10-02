@@ -124,6 +124,9 @@ wgpu::Adapter requestAdapter(wgpu::Instance instance, wgpu::RequestAdapterOption
           dlog("got webgpu device");
           auto device = wgpu::Device::Acquire(cDevice);
           device.SetUncapturedErrorCallback(printDeviceError, nullptr);
+          device.SetLoggingCallback(printDeviceLog, nullptr);
+          device.SetDeviceLostCallback(printDeviceLostCallback, nullptr);
+
           size_t count = device.EnumerateFeatures(nullptr);
           dlog("device number of features: %lu", count);
 
@@ -254,32 +257,39 @@ wgpu::Adapter requestAdapter(wgpu::Instance instance, wgpu::RequestAdapterOption
             wgpu::Buffer& buf;
             DawnRemoteProtocol& proto;
             std::vector<float> input;
+            wgpu::Device device;
           };
 
-          auto ctx = new MapAsyncUserData{m_mapBuffer, proto, std::move(input)};
+          auto ctx = new MapAsyncUserData{m_mapBuffer, proto, std::move(input), std::move(device)};
 
           m_mapBuffer.MapAsync(
               wgpu::MapMode::Read, 0, m_bufferSize,
               [](WGPUBufferMapAsyncStatus status, void* userdata) {
-                auto c =
-                    std::unique_ptr<MapAsyncUserData>(static_cast<MapAsyncUserData*>(userdata));
+                dlog("MapAsync callback");
+                // Leak here, but we need device to live long enough for the error callbacks to be
+                // called
+                // auto c =
+                //    std::unique_ptr<MapAsyncUserData>(static_cast<MapAsyncUserData*>(userdata));
+                auto c = static_cast<MapAsyncUserData*>(userdata);
                 if (status == WGPUBufferMapAsyncStatus_Success) {
                   const float* output = (const float*)c->buf.GetConstMappedRange(0, m_bufferSize);
                   for (int i = 0; i < c->input.size(); ++i) {
                     std::cout << "input " << c->input[i] << " became " << output[i] << std::endl;
                   }
                   c->buf.Unmap();
+                } else {
+                  dlog("MapAsync callback not successful");
                 }
               },
               ctx);
           dlog("will flush");
           proto.Flush();
           dlog("flushed once");
-          device.Tick();
+          ctx->device.Tick();
           dlog("ticked once");
           proto.Flush();
           dlog("flushed twice");
-          device.Tick();
+          ctx->device.Tick();
           dlog("ticked twice");
           proto.Flush();
         },

@@ -95,6 +95,54 @@ void printDeviceError(WGPUErrorType errorType, const char* message, void*) {
   std::cerr << "device error: " << errorTypeName << " error: " << message << std::endl;
 }
 
+void printDeviceLog(WGPULoggingType logType, const char* message, void*) {
+  const char* logTypeName = "";
+  switch (logType) {
+
+  case WGPULoggingType_Verbose:
+    logTypeName = "VERBOSE";
+    break;
+  case WGPULoggingType_Info:
+    logTypeName = "INFO";
+    break;
+  case WGPULoggingType_Warning:
+    logTypeName = "WARNING";
+    break;
+  case WGPULoggingType_Error:
+    logTypeName = "ERROR";
+    break;
+  case WGPULoggingType_Force32:
+    logTypeName = "FORCE32";
+    break;
+  default:
+    UNREACHABLE();
+    return;
+  }
+
+  std::cerr << "device log: " << logTypeName << " message: " << message << std::endl;
+}
+
+void printDeviceLostCallback(WGPUDeviceLostReason reason, const char* message, void*) {
+  const char* reasonName = "";
+
+  switch (reason) {
+  case WGPUDeviceLostReason_Undefined:
+    reasonName = "Undefined";
+    break;
+  case WGPUDeviceLostReason_Destroyed:
+    reasonName = "Destroyed";
+    break;
+  case WGPUDeviceLostReason_Force32:
+    reasonName = "Force32";
+    break;
+  default:
+    UNREACHABLE();
+    return;
+  }
+
+  std::cerr << "device lost reason: " << reasonName << " message: " << message << std::endl;
+}
+
 std::optional<std::string> getFeatureName(wgpu::FeatureName& feature) {
   switch (feature) {
   case wgpu::FeatureName::DepthClipControl:

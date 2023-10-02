@@ -13,4 +13,4 @@ build:windows --cxxopt="-Wno-builtin-macro-redefined"
 build:unix --cxxopt="-std=c++20" --host_cxxopt="-std=c++20"
 
 build:linux --config=unix
-build:macos --config=unix
+build:macos --config=unix -c dbg --spawn_strategy=local
