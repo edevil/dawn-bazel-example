@@ -388,5 +388,7 @@ bool DawnRemoteProtocol::Flush() {
   } else {
     assert(_dawnout.writelen == DAWNCMD_MSG_HEADER_SIZE);
   }
+
+  ev_run(_rl, EVRUN_ONCE);
   return true;
 }

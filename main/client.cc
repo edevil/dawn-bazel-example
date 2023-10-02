@@ -44,6 +44,8 @@ fn computeStuff(@builtin(global_invocation_id) id: vec3<u32>) {
 
 )";
 
+inline constexpr auto m_bufferSize = 64 * sizeof(float);
+
 int connectUNIXSocket(const char* filename) {
   /*struct*/ sockaddr_un addr;
   int fd = createUNIXSocket(filename, &addr);
@@ -117,6 +119,7 @@ wgpu::Adapter requestAdapter(wgpu::Instance instance, wgpu::RequestAdapterOption
         [](WGPURequestDeviceStatus status, WGPUDevice cDevice, const char* message,
            void* pUserData) {
           assert(status == WGPURequestDeviceStatus_Success);
+          DawnRemoteProtocol& proto = *reinterpret_cast<DawnRemoteProtocol*>(pUserData);
 
           dlog("got webgpu device");
           auto device = wgpu::Device::Acquire(cDevice);
@@ -125,7 +128,6 @@ wgpu::Adapter requestAdapter(wgpu::Instance instance, wgpu::RequestAdapterOption
           dlog("device number of features: %lu", count);
 
           // setup compute
-          auto m_bufferSize = 64 * sizeof(float);
 
           // Create bind group layout
           std::vector<wgpu::BindGroupLayoutEntry> bindings(2);
@@ -245,22 +247,41 @@ wgpu::Adapter requestAdapter(wgpu::Instance instance, wgpu::RequestAdapterOption
           wgpu::CommandBufferDescriptor cmdDesc{};
           wgpu::CommandBuffer commands = encoder.Finish(&cmdDesc);
           queue.Submit(1, &commands);
+          dlog("submitted queue");
 
           // Print output
-          // TODO, pass in custom data structure to callback since we can't capture anything
+          struct MapAsyncUserData {
+            wgpu::Buffer& buf;
+            DawnRemoteProtocol& proto;
+            std::vector<float> input;
+          };
+
+          auto ctx = new MapAsyncUserData{m_mapBuffer, proto, std::move(input)};
+
           m_mapBuffer.MapAsync(
               wgpu::MapMode::Read, 0, m_bufferSize,
-              [](WGPUBufferMapAsyncStatus status, void*) {
+              [](WGPUBufferMapAsyncStatus status, void* userdata) {
+                auto c =
+                    std::unique_ptr<MapAsyncUserData>(static_cast<MapAsyncUserData*>(userdata));
                 if (status == WGPUBufferMapAsyncStatus_Success) {
-                  const float* output =
-                      (const float*)m_mapBuffer.GetConstMappedRange(0, m_bufferSize);
-                  for (int i = 0; i < input.size(); ++i) {
-                    std::cout << "input " << input[i] << " became " << output[i] << std::endl;
+                  const float* output = (const float*)c->buf.GetConstMappedRange(0, m_bufferSize);
+                  for (int i = 0; i < c->input.size(); ++i) {
+                    std::cout << "input " << c->input[i] << " became " << output[i] << std::endl;
                   }
-                  m_mapBuffer.Unmap();
+                  c->buf.Unmap();
                 }
               },
-              nullptr);
+              ctx);
+          dlog("will flush");
+          proto.Flush();
+          dlog("flushed once");
+          device.Tick();
+          dlog("ticked once");
+          proto.Flush();
+          dlog("flushed twice");
+          device.Tick();
+          dlog("ticked twice");
+          proto.Flush();
         },
         (void*)&proto);
     proto.Flush();

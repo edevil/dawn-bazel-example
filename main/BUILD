@@ -21,6 +21,7 @@ cc_binary(
         "protocol.hh",
         "server.cc",
     ],
+    defines = ["DEBUG"],
     deps = [
         "//deps/libev",
         "@dawn",
@@ -41,6 +42,7 @@ cc_binary(
         "protocol.cc",
         "protocol.hh",
     ],
+    defines = ["DEBUG"],
     deps = [
         "//deps/libev",
         "@dawn//:dawn_cpp",
