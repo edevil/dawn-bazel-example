@@ -26,9 +26,7 @@
 
 #include <unistd.h> // pipe
 
-std::string cWGSL = R"(`
-
-@group(0) @binding(0) var<storage,read> inputBuffer: array<f32,64>;
+std::string cWGSL = R"(@group(0) @binding(0) var<storage,read> inputBuffer: array<f32,64>;
 @group(0) @binding(1) var<storage,read_write> outputBuffer: array<f32,64>;
 
 // The function to evaluate for each element of the processed buffer
@@ -41,7 +39,6 @@ fn computeStuff(@builtin(global_invocation_id) id: vec3<u32>) {
     // Apply the function f to the buffer element at index id.x:
     outputBuffer[id.x] = f(inputBuffer[id.x]);
 }
-
 )";
 
 inline constexpr auto m_bufferSize = 64 * sizeof(float);
@@ -254,15 +251,16 @@ wgpu::Adapter requestAdapter(wgpu::Instance instance, wgpu::RequestAdapterOption
 
           // Print output
           struct MapAsyncUserData {
-            wgpu::Buffer& buf;
+            wgpu::Buffer buf;
             DawnRemoteProtocol& proto;
             std::vector<float> input;
             wgpu::Device device;
           };
 
-          auto ctx = new MapAsyncUserData{m_mapBuffer, proto, std::move(input), std::move(device)};
+          auto ctx = new MapAsyncUserData{std::move(m_mapBuffer), proto, std::move(input),
+                                          std::move(device)};
 
-          m_mapBuffer.MapAsync(
+          ctx->buf.MapAsync(
               wgpu::MapMode::Read, 0, m_bufferSize,
               [](WGPUBufferMapAsyncStatus status, void* userdata) {
                 dlog("MapAsync callback");
@@ -278,7 +276,7 @@ wgpu::Adapter requestAdapter(wgpu::Instance instance, wgpu::RequestAdapterOption
                   }
                   c->buf.Unmap();
                 } else {
-                  dlog("MapAsync callback not successful");
+                  dlog("MapAsync callback not successful: %i", status);
                 }
               },
               ctx);
@@ -291,6 +289,23 @@ wgpu::Adapter requestAdapter(wgpu::Instance instance, wgpu::RequestAdapterOption
           dlog("flushed twice");
           ctx->device.Tick();
           dlog("ticked twice");
+          proto.Flush();
+
+          dlog("flushed");
+          ctx->device.Tick();
+          dlog("ticked");
+          proto.Flush();
+          dlog("flushed");
+          ctx->device.Tick();
+          dlog("ticked");
+          proto.Flush();
+          dlog("flushed");
+          ctx->device.Tick();
+          dlog("ticked");
+          proto.Flush();
+          dlog("flushed");
+          ctx->device.Tick();
+          dlog("ticked");
           proto.Flush();
         },
         (void*)&proto);
