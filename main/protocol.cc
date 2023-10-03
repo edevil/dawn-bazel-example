@@ -228,9 +228,8 @@ static void DawnRemoteProtocol_doIO(RunLoop* rl, ev_io* w, int revents) {
 }
 
 void DawnRemoteProtocol::doIO(int revents) {
-  // dlog("onConnIO %s %s",
-  //   revents & EV_READ ? "EV_READ" : "",
-  //   revents & EV_WRITE ? "EV_WRITE" : "");
+  dlog("DawnRemoteProtocol::doIO %s %s", revents & EV_READ ? "EV_READ" : "",
+       revents & EV_WRITE ? "EV_WRITE" : "");
 
   if (revents & EV_READ) {
     // read into _rbuf
@@ -385,10 +384,11 @@ bool DawnRemoteProtocol::Flush() {
 
     // reset write
     _dawnout.writelen = DAWNCMD_MSG_HEADER_SIZE;
+
+    ev_run(_rl, EVRUN_NOWAIT);
   } else {
     assert(_dawnout.writelen == DAWNCMD_MSG_HEADER_SIZE);
   }
 
-  ev_run(_rl, EVRUN_ONCE);
   return true;
 }

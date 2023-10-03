@@ -65,6 +65,7 @@ struct DawnRemoteProtocol : public dawn::wire::CommandSerializer {
 
   // callbacks, client only
   std::function<void()> onFrame; // server is ready for a new frame
+
   // onFramebufferInfo is called whenever the underlying framebuffer changes.
   // The argument provided is the same as returned by the fbinfo() method.
   std::function<void(const FramebufferInfo& fbinfo)> onFramebufferInfo;
@@ -77,11 +78,6 @@ struct DawnRemoteProtocol : public dawn::wire::CommandSerializer {
     return _io.fd;
   }
 
-  // client only
-  const FramebufferInfo& fbinfo() const {
-    return _fbinfo;
-  }
-
   void start(RunLoop* rl, int fd);
   void stop();
   bool stopped() const {
@@ -91,7 +87,6 @@ struct DawnRemoteProtocol : public dawn::wire::CommandSerializer {
   bool sendFrameSignal();
   bool sendFramebufferInfo(const FramebufferInfo& info);
   bool sendReservation(const dawn_wire::ReservedSwapChain& scr);
-  // bool sendDawnCommands(const char* src, size_t nbyte);
 
   // dawn_wire::CommandSerializer
   size_t GetMaximumAllocationSize() const override;
@@ -100,8 +95,9 @@ struct DawnRemoteProtocol : public dawn::wire::CommandSerializer {
 
   // internal
   inline void setNeedsWriteFlush() {
-    if ((_io.events & EV_WRITE) == 0)
+    if ((_io.events & EV_WRITE) == 0) {
       setNeedsWriteFlush2();
+    }
   }
   void setNeedsWriteFlush2();
   void doIO(int revents);

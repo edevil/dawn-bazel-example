@@ -307,6 +307,70 @@ wgpu::Adapter requestAdapter(wgpu::Instance instance, wgpu::RequestAdapterOption
           ctx->device.Tick();
           dlog("ticked");
           proto.Flush();
+          dlog("flushed");
+          ctx->device.Tick();
+          dlog("ticked");
+          proto.Flush();
+          dlog("flushed");
+          ctx->device.Tick();
+          dlog("ticked");
+          proto.Flush();
+          dlog("flushed");
+          ctx->device.Tick();
+          dlog("ticked");
+          proto.Flush();
+          dlog("flushed");
+          ctx->device.Tick();
+          dlog("ticked");
+          proto.Flush();
+          dlog("flushed");
+          ctx->device.Tick();
+          dlog("ticked");
+          proto.Flush();
+          dlog("flushed");
+          ctx->device.Tick();
+          dlog("ticked");
+          proto.Flush();
+          dlog("flushed");
+          ctx->device.Tick();
+          dlog("ticked");
+          proto.Flush();
+          dlog("flushed");
+          ctx->device.Tick();
+          dlog("ticked");
+          proto.Flush();
+          dlog("flushed");
+          ctx->device.Tick();
+          dlog("ticked");
+          proto.Flush();
+          dlog("flushed");
+          ctx->device.Tick();
+          dlog("ticked");
+          proto.Flush();
+          dlog("flushed");
+          ctx->device.Tick();
+          dlog("ticked");
+          proto.Flush();
+          dlog("flushed");
+          ctx->device.Tick();
+          dlog("ticked");
+          proto.Flush();
+          dlog("flushed");
+          ctx->device.Tick();
+          dlog("ticked");
+          proto.Flush();
+          dlog("flushed");
+          ctx->device.Tick();
+          dlog("ticked");
+          proto.Flush();
+          dlog("flushed");
+          ctx->device.Tick();
+          dlog("ticked");
+          proto.Flush();
+          dlog("flushed");
+          ctx->device.Tick();
+          dlog("ticked");
+          proto.Flush();
         },
         (void*)&proto);
     proto.Flush();
@@ -407,12 +471,13 @@ void runloop_main(int fd) {
 int main(int argc, const char* argv[]) {
   bool first_retry = true;
   const char* sockfile = SERVER_SOCK;
+  int fd;
   while (1) {
     if (first_retry) {
       dlog("connecting to UNIX socket \"%s\" ...", sockfile);
       first_retry = false;
     }
-    int fd = connectUNIXSocket(sockfile);
+    fd = connectUNIXSocket(sockfile);
     if (fd < 0) {
       if (errno != ECONNREFUSED && errno != ENOENT) {
         perror("connectUNIXSocket");
@@ -420,16 +485,13 @@ int main(int argc, const char* argv[]) {
       sleep(1);
       continue;
     }
-    first_retry = true;
-    dlog("connected to socket");
-    double t = ev_time();
-    runloop_main(fd);
-    close(fd);
-    t = ev_time() - t;
-    if (t < 1.0) {
-      sleep(1);
-    }
+
+    break;
   }
+  dlog("connected to socket");
+  runloop_main(fd);
+  close(fd);
+
   dlog("exit");
   return 0;
 }

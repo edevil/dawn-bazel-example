@@ -79,7 +79,7 @@ template <size_t Size> struct Pipe {
   const char* takeRef(size_t nbyte);
 
   inline char at(size_t index) const {
-    return _storage[_r];
+    return _storage[_r + index];
   }
 
   // clear drains the pipe by discarding any data waiting to be read
@@ -104,8 +104,9 @@ template <size_t Size> size_t Pipe<Size>::writec(char c) {
   char tmp[1] = {c};
   PipeTrace("writec", tmp, std::min((size_t)1, avail()));
 #endif
-  if (avail() == 0)
+  if (avail() == 0) {
     return 0;
+  }
   _storage[_w] = c;
   _w = (_w + 1) % Size;
   return 1;
@@ -122,16 +123,18 @@ template <size_t Size> ssize_t Pipe<Size>::readFromFD(int fd, size_t nbyte) {
     PipeTrace("readFromFD", _storage + _w, (size_t)(total < 0 ? 0 : total));
     if (total < (ssize_t)chunkend) {
       // short read
-      if (total > -1)
+      if (total > -1) {
         goto end;
+      }
       return total;
     }
   }
   if (nbyte > chunkend) {
     ssize_t n = ::read(fd, _storage, nbyte - chunkend);
     PipeTrace("readFromFD", _storage, (size_t)(n < 0 ? 0 : n));
-    if (n < 0)
+    if (n < 0) {
       return n;
+    }
     total += n;
   }
 end:
@@ -143,11 +146,13 @@ template <size_t Size> size_t Pipe<Size>::read(char* data, size_t nbyte) {
   nbyte = std::min(nbyte, len());
   size_t chunkend = std::min(nbyte, Size - _r);
   memcpy(data, _storage + _r, chunkend);
-  if (chunkend > 0)
+  if (chunkend > 0) {
     PipeTrace("read (1)", data, chunkend);
+  }
   memcpy(data + chunkend, _storage, nbyte - chunkend);
-  if (nbyte - chunkend > 0)
+  if (nbyte - chunkend > 0) {
     PipeTrace("read (2)", data + chunkend, nbyte - chunkend);
+  }
   _r = (_r + nbyte) % Size;
   return nbyte;
 }
@@ -161,16 +166,18 @@ template <size_t Size> ssize_t Pipe<Size>::writeToFD(int fd, size_t nbyte) {
     PipeTrace("writeToFD", _storage + _r, (size_t)(total < 0 ? 0 : total));
     if (total < (ssize_t)chunkend) {
       // short write
-      if (total > -1)
+      if (total > -1) {
         goto end;
+      }
       return total;
     }
   }
   if (nbyte > chunkend) {
     ssize_t n = ::write(fd, _storage, nbyte - chunkend);
     PipeTrace("writeToFD", _storage, (size_t)(n < 0 ? 0 : n));
-    if (n < 0)
+    if (n < 0) {
       return n;
+    }
     total += n;
   }
 end:
