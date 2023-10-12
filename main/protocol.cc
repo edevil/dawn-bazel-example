@@ -1,6 +1,7 @@
 #include "protocol.hh"
 #include "debug.hh"
 
+#include <arpa/inet.h>
 #include <cstdio>
 #include <ctype.h> // isprint
 #include <errno.h>
