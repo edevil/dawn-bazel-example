@@ -4,6 +4,7 @@
 #include <dawn/webgpu_cpp.h>
 #include <fcntl.h> // F_GETFL, O_NONBLOCK etc
 #include <iostream>
+#include <optional>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <time.h> // strftime
