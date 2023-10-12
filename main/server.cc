@@ -57,14 +57,6 @@ dawn_native::Adapter backendAdapter;
 wgpu::Device device;
 wgpu::Surface surface;
 
-DawnRemoteProtocol::FramebufferInfo framebufferInfo = {
-    .dpscale = 1000, // 1000=100%
-    .width = 640,
-    .height = 480,
-    .textureFormat = wgpu::TextureFormat::BGRA8Unorm,
-    .textureUsage = wgpu::TextureUsage::RenderAttachment,
-};
-
 void createDawnSwapChain();
 
 // Conn is a connection to a client
