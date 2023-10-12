@@ -16,12 +16,9 @@
 #endif
 #include "pipe.hh"
 
-// silence "mangled name of 'ev_set_allocator' will change in C++17"
-_Pragma("GCC diagnostic push") _Pragma("GCC diagnostic ignored \"-Wc++17-compat-mangling\"")
 #include <ev.h>
-    _Pragma("GCC diagnostic pop")
 
-        typedef struct ev_loop RunLoop;
+typedef struct ev_loop RunLoop;
 
 // dawn buffer sizes
 #define DAWNCMD_MSG_HEADER_SIZE 9 /* "D" <HEXBYTE>{8} */
